@@ -6,10 +6,35 @@ import style from './Onboarding.module.css';
 const Onboarding = () => {
     const navigate = useNavigate();
     const goMainHandler = () => {
+        //Test();
         navigate('/main');
     }
+    /**
+    const Test = async () => {
+        try {
+          const response = await fetch(
+            'http://127.0.0.1:8000/db/adong_infos/',
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+            }
+          );
+  
+        if (!response.ok) {
+        throw new Error(`Error! status: ${response.status}`);
+        }
 
-    const testHandler = () => {};
+        const data = await response.json();
+        console.log(data);
+
+        } catch (error) {
+            console.error('Error fetching study data:', error);
+        }
+    };
+    */
+
     return (
         <div className={style.container}>
             <div className={style.title_wrapper} onClick={goMainHandler}>
