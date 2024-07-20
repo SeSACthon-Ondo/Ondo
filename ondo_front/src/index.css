@@ -1,0 +1,9 @@
+body {
+    margin: 0;
+    font-family: 'pretendard';
+}
+
+@font-face {
+  font-family: 'pretendard';
+  src: url(./assets/font/Pretendard-Regular.otf);
+}

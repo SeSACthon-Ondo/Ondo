@@ -1,0 +1,88 @@
+@font-face {
+    font-family: 'jalnan';
+    src: url(C:\React\ondo\src\assets\font\omyupretty.ttf);
+}
+
+@media (max-width: 414px) {
+    .container{
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background : linear-gradient(to bottom, #F8EDED, #FFB3B3);
+    }
+    .title_wrapper{
+        width: 100%;
+        height: 90%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .mainImg{
+        width: 95px;
+        height: 108px;
+    }
+    .title{
+        margin: 20px 0 0 0;
+        font-weight: 700;
+        color: #1D1617;
+        font-size: 40px;
+        font-family: 'jalnan';
+    }
+    .info{
+        margin: 10px 0 0 0;
+        color: #7B6F72;
+        font-size: 20px;
+        font-family: 'jalnan';
+    }
+    .btn_wrapper{
+        width: 100%;
+        height: 100px;
+        display: grid;
+        justify-content: space-evenly;
+    }
+}
+
+@media (min-width: 414px) {
+    .container{
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background : linear-gradient(to bottom, #F8EDED, #FFB3B3);
+    }
+    .title_wrapper{
+        width: 100%;
+        height: 90%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .mainImg{
+        width: 95px;
+        height: 108px;
+    }
+    .title{
+        margin: 20px 0 0 0;
+        font-weight: 700;
+        color: #1D1617;
+        font-size: 40px;
+        font-family: 'jalnan';
+    }
+    .info{
+        margin: 10px 0 0 0;
+        color: #7B6F72;
+        font-size: 20px;
+        font-family: 'jalnan';
+    }
+    .btn_wrapper{
+        width: 100%;
+        height: 100px;
+        display: grid;
+        justify-content: space-evenly;
+    }
+}

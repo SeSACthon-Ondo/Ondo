@@ -1,0 +1,36 @@
+@font-face {
+    font-family: 'jalnan';
+    src: url(C:\React\ondo\src\assets\font\omyupretty.ttf);
+}
+.header_container{
+    width: 100%;
+    height: 65px;
+    background-color: #FFB3B3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.back_container{
+    width: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    margin-left: 17px;
+    gap: 17px;
+}
+.back_container img{
+    width: 11px;
+    height: 20px;
+ }
+.back_container span{
+    font-size: 24px;
+    color: #FFFFFF;
+    font-weight: 800;
+    font-family: 'jalnan';
+}
+
+.home{
+    width: 32px;
+    height: 32px;
+    margin-right: 17px;
+}

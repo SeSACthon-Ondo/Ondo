@@ -1,0 +1,41 @@
+.map_container{
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+.bAddr{
+    width: auto;
+    height: auto;
+    padding: 10px;
+}
+
+.search_bar{
+    width: 343px;
+    height: 57px;
+    border-radius: 50px;
+    background-color: #FBECEC;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    position: absolute;
+    top: 10%;
+    right: 7%;
+    z-index: 2;
+}
+.search_bar input{
+    width: 70%;
+    height: 90%;
+    background-color: transparent;
+    border: none;
+    font-weight: 600;
+    font-size: 15px;
+    color: #1D1617;
+}
+.search_bar input::placeholder {
+    color: #7B6F72;
+    font-weight: 600;
+}
+.search_bar img{
+    width: 24px;
+    height: 24px;
+}
