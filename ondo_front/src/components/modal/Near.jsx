@@ -16,6 +16,22 @@ const Near = () => {
           name: 'GS 편의점 부천상동점',
           category: '편의점'
         },
+        menu3: {
+          name: 'CU 편의점 부천상동점',
+          category: '편의점'
+        },
+        menu4: {
+          name: 'GS 편의점 부천상동점',
+          category: '편의점'
+        },
+        menu5: {
+          name: 'CU 편의점 부천상동점',
+          category: '편의점'
+        },
+        menu6: {
+          name: 'GS 편의점 부천상동점',
+          category: '편의점'
+        },
     });
     
     return(
@@ -30,7 +46,7 @@ const Near = () => {
                         <img src={icon}/>
                         <div className={style.list_info}>
                             <p>{menu[key].name}</p>
-                            <span>{menu[key].category}</span>
+                            <span># {menu[key].category}</span>
                         </div>
                     </div>
                 ))}
