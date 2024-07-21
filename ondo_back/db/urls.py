@@ -6,4 +6,5 @@ app_name = 'db'
 urlpatterns = [
     path('save_adong_infos/', views.save_adong_infos, name='save_adong_infos'),
     path('adong_infos/', views.adong_infos, name='adong_infos'),
+    path('find-address/', views.find_related_addresses, name='find_address'),
 ]

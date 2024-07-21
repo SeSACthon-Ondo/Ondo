@@ -8,3 +8,10 @@ class Restaurant(models.Model):
 
     def __str__(self):
         return self.name
+
+class Address(models.Model):
+    road_name = models.CharField(max_length=255)
+    related_info = models.TextField()
+
+    def __str__(self):
+        return self.road_name

@@ -111,6 +111,23 @@ export default function Map() {
 
           // 현재 위치의 주소 정보 표시
           displayCenterInfo(geocoder, moveLatLon);
+
+          // 현재 위치 정보를 백엔드로 POST 요청
+          fetch('http://localhost:8080/api/location', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ latitude: x, longitude: y }),
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('Response from server:', data);
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+
         });
       } else {
         alert('접속정보를 불러올 수 없어요!\n 권한을 체크해주세요!');

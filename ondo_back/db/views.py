@@ -5,8 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 import requests
 from django.http import JsonResponse
-from .models import Restaurant
-from .serializers import RestaurantSerializer
+from .models import Restaurant, Address
+from .serializers import RestaurantSerializer, AddressSerializer
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -59,3 +59,14 @@ def adong_infos(request):
     restaurants = Restaurant.objects.all()
     serializer = RestaurantSerializer(restaurants, many=True)
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def find_related_addresses(request):
+    road_name = request.data.get('road_name')
+
+    # 도로명 주소를 기반으로 관련 주소 검색
+    related_addresses = Address.objects.filter(road_name__icontains=road_name)
+    serializer = AddressSerializer(related_addresses, many=True)
+
+    return Response(serializer.data)
