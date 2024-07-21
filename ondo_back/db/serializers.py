@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Restaurant
+from .models import Restaurant, NooriOfflineStore, NooriOnlineStore
 import json
 
 class RestaurantSerializer(serializers.ModelSerializer):
@@ -11,3 +11,15 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
     def get_menu(self, obj):
         return json.loads(obj.menu)
+
+
+class NooriOnlineInfosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NooriOnlineStore
+        fields = '__all__'
+
+
+class NooriOfflineInfosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NooriOfflineStore
+        fields = '__all__'
