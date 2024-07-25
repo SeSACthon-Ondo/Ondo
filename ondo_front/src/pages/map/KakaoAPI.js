@@ -1,4 +1,5 @@
 // src/utils/kakaoMap.js
+const { kakao } = window;
 
 export const initializeMap = (containerId, lat, lon, setMap, setGeocoder, setMarker, setInfowindow, setAddress) => {
     const container = document.getElementById(containerId);
@@ -45,26 +46,61 @@ export const initializeMap = (containerId, lat, lon, setMap, setGeocoder, setMar
     });
   };
   
-  const searchDetailAddrFromCoords = (geocoder, coords, marker, infowindow, mapInstance) => {
-    geocoder.coord2Address(coords.getLng(), coords.getLat(), (result, status) => {
+const searchDetailAddrFromCoords = (geocoder, coords, marker, infowindow, mapInstance) => {
+  geocoder.coord2Address(coords.getLng(), coords.getLat(), (result, status) => {
+    if (status === kakao.maps.services.Status.OK) {
+      const roadAddr = result[0].road_address ? result[0].road_address.address_name : '';
+      let detailAddr = roadAddr ? `<div>도로명주소 : ${roadAddr}</div>` : '';
+      detailAddr += `<div>지번 주소 : ${result[0].address.address_name}</div>`;
+
+      const content = `<div>
+          <span>내 위치</span>
+          ${detailAddr}
+        </div>`;
+
+      // 클릭한 위치에 마커를 표시
+      marker.setPosition(coords);
+      marker.setMap(mapInstance);
+
+      // 클릭한 위치의 주소 정보를 인포윈도우에 표시
+      infowindow.setContent(content);
+      infowindow.open(mapInstance, marker);
+    }
+  });
+};
+  
+export const setMarkerHandler = (geocoder, address, map, infowindow, name, category) => {
+  return new Promise((resolve, reject) => {
+    geocoder.addressSearch(address, function(result, status) {
       if (status === kakao.maps.services.Status.OK) {
-        const roadAddr = result[0].road_address ? result[0].road_address.address_name : '';
-        let detailAddr = roadAddr ? `<div>도로명주소 : ${roadAddr}</div>` : '';
-        detailAddr += `<div>지번 주소 : ${result[0].address.address_name}</div>`;
-  
-        const content = `<div>
-            <span>내 위치</span>
-            ${detailAddr}
-          </div>`;
-  
-        // 클릭한 위치에 마커를 표시
-        marker.setPosition(coords);
-        marker.setMap(mapInstance);
-  
-        // 클릭한 위치의 주소 정보를 인포윈도우에 표시
-        infowindow.setContent(content);
-        infowindow.open(mapInstance, marker);
+        const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+
+        // 결과값으로 받은 위치를 새로운 마커로 표시합니다
+        const marker = new kakao.maps.Marker({
+          position: coords,
+          map: map
+        });
+
+        // 인포윈도우로 장소에 대한 설명을 표시합니다
+        const infoContent = `<div style="width:150px;text-align:center;padding:6px 0;">${name}<br>${category}</div>`;
+        const infoWindow = new kakao.maps.InfoWindow({
+          content: infoContent
+        });
+        infoWindow.open(map, marker);
+
+        // 마커 클릭 시 인포윈도우를 표시하도록 이벤트 등록
+        kakao.maps.event.addListener(marker, 'click', () => {
+          infoWindow.open(map, marker);
+        });
+
+        // 지도의 중심을 결과값으로 받은 위치로 이동시킵니다
+        map.setCenter(coords);
+
+        resolve(marker);
+      } else {
+        reject(new Error('Failed to search address'));
       }
     });
-  };
-  
+  });
+};
+
