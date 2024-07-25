@@ -5,7 +5,6 @@ import icon from '../../assets/icon.png';
 
 const Near = () => {
     const type = localStorage.getItem('type');
-    console.log(type);
 
     const [menu, setMenu] = useState({
         menu1: {
