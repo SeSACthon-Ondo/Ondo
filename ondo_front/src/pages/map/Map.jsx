@@ -78,6 +78,14 @@ export default function Map() {
     },
   });
 
+  const cardType = localStorage.getItem('type');
+  let modalHeader = '';
+  if (cardType === '꿈나무') {
+    modalHeader = '주변에 있는 추천 맛집이에요!';
+  } else {
+    modalHeader = '주변에 있는 추천 문화 시설이에요!';
+  }
+
   return (
     <div className={style.map_container}>
       <Header />
@@ -111,7 +119,10 @@ export default function Map() {
       <div onClick={handleRefresh} className={style.reload_box}>
         <img src={reload} />
       </div>
-      <BottomModal inner={<Near />} />
+      <BottomModal 
+        inner={<Near />}
+        header={modalHeader}
+      />
     </div>
   );
 
