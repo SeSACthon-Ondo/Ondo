@@ -1,99 +1,144 @@
+/* BottomModal.module.css */
 .modal_container {
-    width: 100%;
-    height: 75%;
-    border-top-left-radius: 30px;
-    border-top-right-radius: 30px;
-    background-color: #FFFFFF;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: fixed;
-    bottom: -380px;
-    z-index: 2;
-    transition: transform 0.3s ease;
-    transform: translateY(0%); /* 초기 상태에서 화면 아래로 숨김 */
-  }
-  
-  .modalOpen {
-    transform: translateY(-55%); /* 화면 위로 올라옴 */
-  }
-  
-  .modalContent {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 15px;
-    overflow-y: scroll;
-  }
-  
-  .modalContent img {
-    width: 50px;
-    height: 5px;
-  }
-  
+  width: 100%;
+  height: 75%;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  background-color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: fixed;
+  bottom: -380px;
+  z-index: 2;
+  transition: transform 0.3s ease;
+  transform: translateY(0%); /* 초기 상태에서 화면 아래로 숨김 */
+}
 
-  .loading_container{
-    width: 100%;
-    height: 40%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .loading_container img{
-    width: 50px;
-    height: 50px;
-  }
-  .loading_container p{
-    color: #1D1617;
-    font-size: 16px;
-    font-weight: 600;
-  }
+.modalOpen {
+  transform: translateY(-55%); /* 화면 위로 올라옴 */
+}
 
-  .near_container{
-    width: 90%;
-    height: auto;
-  }
-  .near_title{
-    color: #1D1617;
-    font-size: 17px;
-    font-weight: 800;
-  }
-  .list_container{
-    border-top: 1px solid #D9D9D9;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .list{
-    width: 100%;
-    height: 55px;
-    display: flex;
-    align-items: center;
-    margin-top: 15px;
-    gap: 15px;
-  }
-  .list img{
-    width: 55px;
-    height: 50px;
-    border: 1.5px solid #FFB3B3;
-    border-radius: 10px;
-  }
-  .list_info{
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    flex-direction: column;
-  }
-  .list_info p{
-    font-size: 15px;
-    color: #1D1617;
-    font-weight: 600;
-    margin: 5px 0;
-  }
-  .list_info span{
-    color: #717171;
-    font-size: 13px;
-  }
+.modalContent {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+  overflow-y: scroll;
+}
+
+.modalContent img {
+  width: 50px;
+  height: 5px;
+}
+
+.header_container {
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 70px;
+}
+
+.header_container img {
+  text-align: center;
+  margin: auto;
+}
+
+.near_title {
+  color: #1D1617;
+  font-size: 17px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.no-scroll {
+  overflow: hidden;
+}
+
+.loading_container {
+  width: 100%;
+  height: 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading_container img {
+  width: 50px;
+  height: 50px;
+}
+
+.loading_container p {
+  color: #1D1617;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.near_container {
+  width: 90%;
+  height: auto;
+  overflow-y: scroll;
+  padding-bottom: 40px;
+}
+
+.list_container {
+  border-top: 1px solid #D9D9D9;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.list {
+  width: 100%;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  margin-top: 15px;
+  gap: 15px;
+}
+
+.list img {
+  width: 55px;
+  height: 50px;
+  border: 1.5px solid #FFB3B3;
+  border-radius: 10px;
+}
+
+.list_info {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.list_info p {
+  font-size: 15px;
+  color: #1D1617;
+  font-weight: 600;
+  margin: 5px 0;
+}
+
+.list_info span {
+  color: #717171;
+  font-size: 13px;
+}
+
+/* 오버레이 추가 */
+.modal_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.2); /* 배경을 어둡게 */
+  display: none;
+  z-index: 1;
+}
+
+.modal_overlay.modalOpen {
+  display: block;
+}
