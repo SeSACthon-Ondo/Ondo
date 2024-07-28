@@ -5,6 +5,8 @@ class Restaurant(models.Model):
     address = models.CharField(max_length=255)
     category = models.CharField(max_length=100)
     menu = models.JSONField()
+    latitude = models.FloatField()
+    longitude = models.FloatField()
 
     def __str__(self):
         return self.name
@@ -27,3 +29,11 @@ class NooriOfflineStore(models.Model):
 
     def __str__(self):
         return self.store_name
+
+# 검색 기록 저장
+class SearchHistory(models.Model):
+    query = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.query
