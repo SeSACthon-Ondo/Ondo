@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 import requests
 from django.http import JsonResponse
-from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, SearchHistory
+from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory
 from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer
 import matplotlib
 matplotlib.use('Agg')
@@ -179,7 +179,7 @@ def adong_search(request):
 @api_view(['GET'])
 def adong_search_recommendations(request):
     # 데이터베이스에서 검색 기록 가져오기
-    search_records = SearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
+    search_records = AdongSearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
 
     # 검색 기록을 리스트로 변환
     search_history = [record.query for record in search_records]
@@ -259,7 +259,7 @@ def noori_search(request):
 @api_view(['GET'])
 def noori_search_recommendations(request):
     # 데이터베이스에서 검색 기록 가져오기
-    search_records = SearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
+    search_records = NooriSearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
 
     # 검색 기록을 리스트로 변환
     search_history = [record.query for record in search_records]

@@ -31,7 +31,14 @@ class NooriOfflineStore(models.Model):
         return self.store_name
 
 # 검색 기록 저장
-class SearchHistory(models.Model):
+class AdongSearchHistory(models.Model):
+    query = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.query
+
+class NooriSearchHistory (models.Model):
     query = models.CharField(max_length=255)
     timestamp = models.DateTimeField(auto_now_add=True)
 
