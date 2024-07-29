@@ -104,3 +104,9 @@ export const setMarkerHandler = (geocoder, address, map, infowindow, name, categ
   });
 };
 
+export const markerClickHandler = () => {
+  // 마커에 클릭이벤트를 등록합니다
+  kakao.maps.event.addListener(marker, 'click', function() {
+     
+  });
+}
