@@ -32,7 +32,7 @@ export default function Map() {
 
   //KakaoAPI.js
   useEffect(() => {
-    initializeMap("map", lat, lon, setMap, setGeocoder, () => {}, setInfowindow, setAddress);
+    initializeMap("map", lat, lon, setMap, setGeocoder, () => {}, /*setInfowindow,*/ setAddress);
   }, [refresh]);
 
   const dummyData = [
@@ -69,7 +69,7 @@ export default function Map() {
       // 새로운 마커 생성 및 설정
       const newMarkers = [];
       dummyData.forEach(data => {
-        setMarkerHandler(geocoder, data.address, map, infowindow, data.name, data.category)
+        setMarkerHandler(geocoder, data.address, map, /*infowindow,*/ data.name, data.category, handleListItemClick)
           .then(marker => {
             marker.name = data.name; // 마커에 name 저장
             marker.category = data.category; // 마커에 category 저장
@@ -132,15 +132,6 @@ export default function Map() {
           menu = {selectedMarker.menu}
           refresh = {handleRefresh}
         />
-        // <div>
-        //   <h2>{selectedMarker.name}</h2>
-        //   <p>Category: {selectedMarker.category}</p>
-        //   <ul>
-        //     {Object.keys(selectedMarker.menu).map(key => (
-        //       <li key={key}>{selectedMarker.menu[key]}</li>
-        //     ))}
-        //   </ul>
-        // </div>
       );
     } else {
       headerText = modalHeader;
