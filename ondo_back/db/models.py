@@ -5,8 +5,8 @@ class Restaurant(models.Model):
     address = models.CharField(max_length=255)
     category = models.CharField(max_length=100)
     menu = models.JSONField()
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return self.name
