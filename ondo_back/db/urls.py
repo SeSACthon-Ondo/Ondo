@@ -10,4 +10,10 @@ urlpatterns = [
     path('adong_infos/', views.adong_infos, name='adong_infos'),
     path('noori_online_infos/', views.noori_online_infos, name='noori_online_infos'),
     path('noori_offline_infos/', views.noori_offline_infos, name='noori_offline_infos'),
+    path('adong/send_address/', views.adong_send_address, name='adong_send_address'),
+    path('adong/search/', views.adong_search, name='adong_search'),
+    path('adong/search_recommend/', views.adong_search_recommendations, name='adong_search_recommendations'),
+    path('noori/send_address/', views.noori_send_address, name='noori_send_address'),
+    path('noori/search/', views.noori_search, name='noori_search'),
+    path('noori/search_recommend/', views.noori_search_recommendations, name='noori_search_recommendations'),
 ]

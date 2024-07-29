@@ -1,4 +1,4 @@
-@api_view(['GET'])
+# @api_view(['GET'])
 # def save_adong_infos(request):
 #     file_path = os.path.join(settings.BASE_DIR, 'restaurant_data.csv')
 #     if not os.path.exists(file_path):

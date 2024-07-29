@@ -94,10 +94,10 @@ export default function Map() {
       <Header />
 
       <div className={style.search_bar}>
-        <input 
-          type="text" 
-          placeholder={placeholder} 
-          spellCheck='false' 
+        <input
+          type="text"
+          placeholder={placeholder}
+          spellCheck='false'
         />
         <img src={search} />
       </div>
