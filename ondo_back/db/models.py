@@ -30,7 +30,7 @@ class NooriOfflineStore(models.Model):
     def __str__(self):
         return self.store_name
 
-# °Ë»ö ±â·Ï ÀúÀå
+# ï¿½Ë»ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 class AdongSearchHistory(models.Model):
     query = models.CharField(max_length=255)
     timestamp = models.DateTimeField(auto_now_add=True)
