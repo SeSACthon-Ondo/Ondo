@@ -5,6 +5,7 @@ const { kakao } = window;
 import BottomModal from "../../components/modal/BottomModal";
 import Loading from "../../components/modal/Loading";
 import Near from "../../components/modal/Near";
+import SearchList from "../../components/modal/SearchList";
 
 import { initializeMap, displayCenterInfo, setMarkerHandler } from './KakaoAPI';
 
@@ -54,8 +55,10 @@ export default function Map() {
       dummyData.forEach(data => {
         setMarkerHandler(geocoder, data.address, map, infowindow, data.name, data.category)
           .then(marker => {
+            marker.name = data.name; // 마커에 name 저장
+            marker.category = data.category; // 마커에 category 저장
             newMarkers.push(marker);
-            setMarkers(newMarkers);
+            setMarkers(prevMarkers => [...prevMarkers, marker]); // 마커를 상태에 추가
           })
           .catch(error => {
             console.error(error);
@@ -64,20 +67,20 @@ export default function Map() {
     }
   }, [map, geocoder]);
 
+  // 마커 클릭 이벤트 등록
+  useEffect(() => {
+    markers.forEach(marker => {
+      kakao.maps.event.addListener(marker, 'click', function() {
+        alert(`Marker clicked!\nName: ${marker.name}\nCategory: ${marker.category}`); // 마커 클릭 시 알림창에 이름과 카테고리 표시
+      });
+    });
+  }, [markers]);
+
+  //카드 종류
   const type = localStorage.getItem('type');
   const placeholder = type === '꿈나무'? '무엇이 드시고 싶나요?' : '무엇을 하고 싶나요?';
-  const [keywords, setKeywords] = useState(['떡볶이', '한식', '백반', '분식']);
-  const [menu, setMenu] = useState({
-    menu1: {
-      name: 'CU 편의점 부천상동점',
-      category: '편의점'
-    },
-    menu2: {
-      name: 'GS 편의점 부천상동점',
-      category: '편의점'
-    },
-  });
 
+  //카드 종류에 따른 렌더링
   const cardType = localStorage.getItem('type');
   let modalHeader = '';
   if (cardType === '꿈나무') {
@@ -99,15 +102,6 @@ export default function Map() {
         <img src={search} />
       </div>
 
-      <div className={style.keywords}>
-        <div className={style.keyword_title}>AI 추천 키워드</div>
-        {keywords.map((keyword, index) => (
-          <div key={index} className={style.keyword}>
-            {keyword}
-          </div>
-        ))}
-      </div>
-
       <div
         id="map"
         style={{
@@ -127,11 +121,3 @@ export default function Map() {
   );
 
 }
-/**
- * <Loading />
- <div>
-   <span className="title">내 위치</span>
-   <p id="centerAddr">{address}</p>
- </div>
- * 
- */
