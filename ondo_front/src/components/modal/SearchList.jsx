@@ -9,14 +9,14 @@ import western from '../../assets/양식.png';
 const SearchList = (props) => {
     return (
         <div className={style.result_container}>
-        <div className={style.controller}>
-            <img className={style.back} src={back} alt='back' onClick={props.refresh}/>
-            <img className={style.food} src={korea} alt='food'/>
-            <div className={style.name}>
-                <h2>{props.name}</h2>
-                <p># {props.category}</p>
-            </div>
-        </div>
+          <div className={style.controller}>
+              <img className={style.back} src={back} alt='back' onClick={props.refresh}/>
+              <img className={style.food} src={korea} alt='food'/>
+              <div className={style.name}>
+                  <h2>{props.name}</h2>
+                  <p># {props.category}</p>
+              </div>
+          </div>
           <div className={style.hr}></div>
           <h3>메뉴</h3>
           <ul>

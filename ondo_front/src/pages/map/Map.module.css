@@ -42,7 +42,7 @@
     font-weight: 700;
     font-family: 'pretendard';
 }
-.search_bar img{
+.search{
     width: 24px;
     height: 24px;
 }
@@ -121,4 +121,15 @@
     margin: 0;
     color: #7B6F72;
     font-size: 12px;
+}
+
+.search_on{
+    width: 100%;
+    height: 100%;
+    background-color: #FFFFFF;
+    z-index: 10;
+}
+.back{
+    width: 11px;
+    height: 18px;
 }
