@@ -13,21 +13,24 @@ const BottomModal = ({ inner, header }) => {
       document.body.classList.remove(style.noScroll);
     }
 
-    // Clean up the class when the component is unmounted
     return () => {
       document.body.classList.remove(style.noScroll);
     };
   }, [isOpen]);
 
+  //모달 오픈
   const toggleModal = () => {
     setIsOpen(!isOpen);
   };
 
+  //모달 오픈 시, 배경 누르면 닫힘
   const handleOutsideClick = (e) => {
     if (e.target.classList.contains(style.modal_overlay)) {
       setIsOpen(false);
     }
   };
+
+  const headerHeight = header ? style.header_container : style.header_none_container;
 
   return (
     <>
@@ -38,9 +41,9 @@ const BottomModal = ({ inner, header }) => {
       />
       <div className={`${style.modal_container} ${isOpen ? style.modalOpen : ""}`}>
         <div className={style.modalContent} onClick={(e) => e.stopPropagation()}>
-          <div className={style.header_container} onClick={toggleModal}>
-            <img src={swap} alt="swap" />
-            <p className={style.near_title}>{header}</p>
+          <div className={headerHeight} onClick={toggleModal}>
+            <img className={style.img} src={swap} alt="swap" />
+            {header ? <p className={style.near_title}>{header}</p> : <></>}
           </div>
           {inner}
         </div>

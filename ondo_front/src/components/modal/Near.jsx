@@ -1,9 +1,10 @@
-import { useState } from 'react';
+/* eslint-disable react/prop-types */
+import { useEffect, useState } from 'react';
 
 import style from './BottomModal.module.css';
 import icon from '../../assets/icon.png';
 
-const Near = () => {
+const Near = (props) => {
     const type = localStorage.getItem('type');
 
     const [menu, setMenu] = useState({
@@ -44,12 +45,20 @@ const Near = () => {
           category: '편의점'
         },
     });
+
+    useEffect(() => {
+      setMenu(props.list);
+    }, [props])
     
     return(
         <div className={style.near_container}>
             <div className={style.list_container}> 
-                {Object.keys(menu).map(key => (
-                    <div key={key} className={style.list}>
+                {Object.keys(menu).map((key, index) => (
+                    <div 
+                        key={key} 
+                        className={style.list}
+                        onClick={() => props.onListItemClick(props.markers[index])} // 리스트 아이템 클릭 시
+                    >
                         <img src={icon}/>
                         <div className={style.list_info}>
                             <p>{menu[key].name}</p>
@@ -63,3 +72,4 @@ const Near = () => {
 };
 
 export default Near;
+/* eslint-disable react/prop-types */
