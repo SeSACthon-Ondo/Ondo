@@ -1,27 +1,27 @@
-// src/utils/kakaoMap.js
+import markerImgSrc from '../../assets/marker.png';
+import myMarker from '../../assets/my.png';
+import style from './Map.module.css';
 const { kakao } = window;
 
-export const initializeMap = (containerId, lat, lon, setMap, setGeocoder, setMarker, setInfowindow, setAddress) => {
-    const container = document.getElementById(containerId);
+// 지도 초기화 함수
+export const initializeMap = (containerId, lat, lon, setMap, setGeocoder, setMarker, setAddress) => {
+    const container = document.getElementById(containerId); // 지도를 표시할 HTML 요소를 가져옵니다.
     const options = {
-      center: new kakao.maps.LatLng(lat, lon),
-      level: 3,
+      center: new kakao.maps.LatLng(lat, lon), // 지도의 중심 좌표 설정
+      level: 4, // 지도의 확대 레벨 설정
     };
-    const mapInstance = new kakao.maps.Map(container, options);
-    setMap(mapInstance);
+    const mapInstance = new kakao.maps.Map(container, options); // 지도 객체 생성
+    setMap(mapInstance); // 생성된 지도 객체를 상태로 설정
   
-    const geocoderInstance = new kakao.maps.services.Geocoder();
-    setGeocoder(geocoderInstance);
+    const geocoderInstance = new kakao.maps.services.Geocoder(); // 지오코더 객체 생성
+    setGeocoder(geocoderInstance); // 생성된 지오코더 객체를 상태로 설정
   
-    const markerInstance = new kakao.maps.Marker();
-    setMarker(markerInstance);
-  
-    const infowindowInstance = new kakao.maps.InfoWindow({ zindex: 1 });
-    setInfowindow(infowindowInstance);
+    const markerInstance = new kakao.maps.Marker(); // 마커 객체 생성
+    setMarker(markerInstance); // 생성된 마커 객체를 상태로 설정
   
     // 지도 클릭 이벤트 등록
     kakao.maps.event.addListener(mapInstance, 'click', function (mouseEvent) {
-      searchDetailAddrFromCoords(geocoderInstance, mouseEvent.latLng, markerInstance, infowindowInstance, mapInstance);
+      searchDetailAddrFromCoords(geocoderInstance, mouseEvent.latLng, markerInstance, mapInstance);
     });
   
     // 지도 중심 변경 이벤트 등록
@@ -33,12 +33,13 @@ export const initializeMap = (containerId, lat, lon, setMap, setGeocoder, setMar
     displayCenterInfo(geocoderInstance, mapInstance.getCenter(), setAddress);
   };
   
-  export const displayCenterInfo = (geocoder, coords, setAddress) => {
+// 지도 중심 좌표의 주소 정보를 표시하는 함수
+export const displayCenterInfo = (geocoder, coords, setAddress) => {
     geocoder.coord2RegionCode(coords.getLng(), coords.getLat(), (result, status) => {
       if (status === kakao.maps.services.Status.OK) {
         for (let i = 0; i < result.length; i++) {
           if (result[i].region_type === 'H') {
-            setAddress(result[i].address_name);
+            setAddress(result[i].address_name); // 중심 좌표의 주소 정보를 상태로 설정
             break;
           }
         } 
@@ -46,67 +47,98 @@ export const initializeMap = (containerId, lat, lon, setMap, setGeocoder, setMar
     });
   };
   
-const searchDetailAddrFromCoords = (geocoder, coords, marker, infowindow, mapInstance) => {
+// 좌표를 주소로 변환하고 해당 위치에 마커를 표시하는 함수
+const searchDetailAddrFromCoords = (geocoder, coords, marker, mapInstance) => {
   geocoder.coord2Address(coords.getLng(), coords.getLat(), (result, status) => {
     if (status === kakao.maps.services.Status.OK) {
       const roadAddr = result[0].road_address ? result[0].road_address.address_name : '';
       let detailAddr = roadAddr ? `<div>도로명주소 : ${roadAddr}</div>` : '';
       detailAddr += `<div>지번 주소 : ${result[0].address.address_name}</div>`;
 
-      const content = `<div>
-          <span>내 위치</span>
-          ${detailAddr}
-        </div>`;
-
-      // 클릭한 위치에 마커를 표시
-      marker.setPosition(coords);
-      marker.setMap(mapInstance);
-
-      // 클릭한 위치의 주소 정보를 인포윈도우에 표시
-      infowindow.setContent(content);
-      infowindow.open(mapInstance, marker);
     }
   });
 };
   
-export const setMarkerHandler = (geocoder, address, map, infowindow, name, category) => {
+// 주소를 좌표로 변환하고 마커를 생성 및 설정하는 함수
+export const setMarkerHandler = (geocoder, address, map, name, category, handleListItemClick, markers) => {
   return new Promise((resolve, reject) => {
-    geocoder.addressSearch(address, function(result, status) {
-      if (status === kakao.maps.services.Status.OK) {
-        const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+    // 사용자의 현재 위치를 가져옵니다.
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        const userCoords = new kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
+        
+        geocoder.addressSearch(address, function(result, status) {
+          if (status === kakao.maps.services.Status.OK) {
+            const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
 
-        // 결과값으로 받은 위치를 새로운 마커로 표시합니다
-        const marker = new kakao.maps.Marker({
-          position: coords,
-          map: map
+            // 마커 이미지 사이즈
+            const imageSize = new kakao.maps.Size(31, 46);
+
+            // 마커 이미지 선언
+            const markerImage = new kakao.maps.MarkerImage(markerImgSrc, imageSize);
+
+            const userMarkerImage = new kakao.maps.MarkerImage(myMarker, imageSize);
+
+            // 결과값으로 받은 위치를 새로운 마커로 표시합니다
+            const marker = new kakao.maps.Marker({
+              position: coords,
+              map: map,
+              image: markerImage // 마커이미지 설정
+            });
+
+            // 사용자 위치에 마커를 추가합니다
+            const userMarker = new kakao.maps.Marker({
+              position: userCoords,
+              map: map,
+              image: userMarkerImage // 마커이미지 설정
+            });
+
+            // 커스텀 오버레이로 사용할 HTML 생성
+            const overlayContent = document.createElement('div');
+            overlayContent.className = style.infoBox;
+            overlayContent.innerHTML = `<h3>${name}</h3><p># ${category}<p>`;
+
+            // 커스텀 오버레이 생성
+            const customOverlay = new kakao.maps.CustomOverlay({
+              content: overlayContent,
+              clickable: true,
+              position: coords,
+              xAnchor: 0.5,
+              yAnchor: 1,
+              zIndex: 3
+            });
+
+            // 커스텀 오버레이를 지도에 추가
+            customOverlay.setMap(map);
+
+            // 커스텀 오버레이 클릭 시 handleListItemClick 호출
+            customOverlay.getContent().addEventListener('click', () => {
+              handleListItemClick(marker);
+              map.setCenter(coords);
+            });
+
+            // 지도의 중심을 사용자의 현재 위치로 이동시킵니다
+            map.setCenter(userCoords);
+
+            resolve(marker);
+          } else {
+            reject(new Error('Failed to search address'));
+          }
         });
-
-        // 인포윈도우로 장소에 대한 설명을 표시합니다
-        const infoContent = `<div style="width:150px;text-align:center;padding:6px 0;">${name}<br>${category}</div>`;
-        const infoWindow = new kakao.maps.InfoWindow({
-          content: infoContent
-        });
-        infoWindow.open(map, marker);
-
-        // 마커 클릭 시 인포윈도우를 표시하도록 이벤트 등록
-        kakao.maps.event.addListener(marker, 'click', () => {
-          infoWindow.open(map, marker);
-        });
-
-        // 지도의 중심을 결과값으로 받은 위치로 이동시킵니다
-        //map.setCenter(coords);
-
-        resolve(marker);
-      } else {
-        reject(new Error('Failed to search address'));
-      }
-    });
+      }, function(error) {
+        reject(new Error('Geolocation failed: ' + error.message));
+      });
+    } else {
+      reject(new Error('Geolocation not supported.'));
+    }
   });
 };
 
+
+// 마커에 클릭이벤트를 등록하는 함수 (현재 사용되지 않음)
 export const markerClickHandler = () => {
   // 마커에 클릭이벤트를 등록합니다
   kakao.maps.event.addListener(marker, 'click', function() {
-     
+    map.setCenter(coords);
   });
-}
+};
