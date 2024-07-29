@@ -157,7 +157,20 @@ def adong_send_address(request):
     # 상위 5개 레스토랑을 직렬화
     serializer = RestaurantSerializer([restaurant[0] for restaurant in top_5_nearby], many=True)
 
-    return Response(serializer.data)
+    # 검색 기록을 데이터베이스에서 가져오기
+    search_records = AdongSearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
+    search_history = [record.query for record in search_records]
+
+    if search_history:
+        # GPT 모듈에 검색 기록 전달
+        gpt_response = get_gpt_response(search_history)  # 용형 모듈 가져오는 코드
+    else:
+        gpt_response = {"message": "검색 기록이 없습니다."}
+
+    return Response({
+        "nearby_restaurants": serializer.data,
+        "gpt_response": gpt_response
+    })
 
 # 검색 - 아동
 @api_view(['POST'])
@@ -173,25 +186,6 @@ def adong_search(request):
 
     # 결과를 클라이언트에 반환
     # return Response(search_results, status=status.HTTP_200_OK)
-    return Response(status=status.HTTP_200_OK)
-
-# 검색 기록 추천 - 아동
-@api_view(['GET'])
-def adong_search_recommendations(request):
-    # 데이터베이스에서 검색 기록 가져오기
-    search_records = AdongSearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
-
-    # 검색 기록을 리스트로 변환
-    search_history = [record.query for record in search_records]
-
-    if not search_history:
-        return Response({"message": "검색 기록이 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-    # GPT 모듈에 검색 기록 전달
-    # gpt_response = get_gpt_response(search_history)
-
-    # 결과를 클라이언트에 반환
-    # return Response(gpt_response, status=status.HTTP_200_OK)
     return Response(status=status.HTTP_200_OK)
 
 # 현재 위치 기준 추천 - 문화
@@ -215,6 +209,7 @@ def noori_send_address(request):
     if not combined_infos:
         return Response({"message": "해당 도로명 주소와 일치하는 주소가 없습니다."}, status=404)
 
+
     # 가까운 거리 계산을 위한 리스트 생성
     nearby_stores = []
     for store in combined_infos:
@@ -236,7 +231,20 @@ def noori_send_address(request):
             serializer = NooriOfflineInfosSerializer(store)
         serializer_data.append(serializer.data)
 
-    return Response(serializer_data)
+    # 검색 기록을 데이터베이스에서 가져오기
+    search_records = NooriSearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
+    search_history = [record.query for record in search_records]
+
+    if search_history:
+        # GPT 모듈에 검색 기록 전달
+        gpt_response = get_gpt_response(search_history)  # 용형 모듈 가져오는 코드
+    else:
+        gpt_response = {"message": "검색 기록이 없습니다."}
+
+    return Response({
+        "nearby_stores": serializer.data,
+        "gpt_response": gpt_response
+    })
 
 
 # 검색 - 문화
@@ -253,23 +261,4 @@ def noori_search(request):
 
     # 결과를 클라이언트에 반환
     # return Response(search_results, status=status.HTTP_200_OK)
-    return Response(status=status.HTTP_200_OK)
-
-# 검색 기반 추천 - 문화
-@api_view(['GET'])
-def noori_search_recommendations(request):
-    # 데이터베이스에서 검색 기록 가져오기
-    search_records = NooriSearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
-
-    # 검색 기록을 리스트로 변환
-    search_history = [record.query for record in search_records]
-
-    if not search_history:
-        return Response({"message": "검색 기록이 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-    # GPT 모듈에 검색 기록 전달
-    # gpt_response = get_gpt_response(search_history)
-
-    # 결과를 클라이언트에 반환
-    # return Response(gpt_response, status=status.HTTP_200_OK)
     return Response(status=status.HTTP_200_OK)
