@@ -256,8 +256,12 @@ def adong_search(request):
     if not road_name:
         return Response({"error": "도로명이 필요합니다."}, status=400)
 
-    if latitude is None or longitude is None:
-        return Response({"error": "위도와 경도가 필요합니다."}, status=400)
+    try:
+        # 문자열을 실수형으로 변환
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except (ValueError, TypeError):
+        return Response({"error": "위도와 경도가 유효한 숫자여야 합니다."}, status=400)
 
     if not query:
         return Response({"error": "검색 쿼리를 제공해야 합니다."}, status=400)
@@ -265,39 +269,41 @@ def adong_search(request):
     # 주변 음식점 검색
     serialized_restaurants = find_nearby_restaurants(latitude, longitude, radius_m)
 
-    # CSV 파일 생성
-    csv_file_path = 'user_data.csv'
-    try:
-        with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
-            writer = csv.writer(file)
-            writer.writerow(['user_location', 'user_cuisine', 'restaurant_candidates'])
+    return Response(serialized_restaurants)
 
-            # 유저 위치 정보와 검색 기록, 음식점 리스트 추가
-            restaurant_names = [restaurant['name'] for restaurant in serialized_restaurants]
-            writer.writerow([f"{latitude}, {longitude}", query, ', '.join(restaurant_names)])  # 리스트를 문자열로 변환하여 저장
-
-        # get_recommendations_from_csv 함수 호출
-        gpt_response = get_recommendations_from_csv(csv_file_path)
-
-    finally:
-        # 임시 CSV 파일 삭제
-        if os.path.exists(csv_file_path):
-            os.remove(csv_file_path)
-
-    # GPT 모듈의 JSON 응답 처리
-    if isinstance(gpt_response, dict) and 'restaurants' in gpt_response:
-        response_data = {
-            "gpt_restaurants": gpt_response['restaurants']
-        }
-        # 검색 기록 저장
-        AdongSearchHistory.objects.create(query=query)  # 검색 쿼리를 데이터베이스에 저장
-    else:
-        response_data = {
-            "gpt_restaurants": [],
-            "message": "유효한 가맹점 정보가 없습니다."
-        }
-
-    return Response(response_data)
+    # # CSV 파일 생성
+    # csv_file_path = 'user_data.csv'
+    # try:
+    #     with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+    #         writer = csv.writer(file)
+    #         writer.writerow(['user_location', 'user_cuisine', 'restaurant_candidates'])
+    #
+    #         # 유저 위치 정보와 검색 기록, 음식점 리스트 추가
+    #         restaurant_names = [restaurant['name'] for restaurant in serialized_restaurants]
+    #         writer.writerow([f"{latitude}, {longitude}", query, ', '.join(restaurant_names)])  # 리스트를 문자열로 변환하여 저장
+    #
+    #     # get_recommendations_from_csv 함수 호출
+    #     gpt_response = get_recommendations_from_csv(csv_file_path)
+    #
+    # finally:
+    #     # 임시 CSV 파일 삭제
+    #     if os.path.exists(csv_file_path):
+    #         os.remove(csv_file_path)
+    #
+    # # GPT 모듈의 JSON 응답 처리
+    # if isinstance(gpt_response, dict) and 'restaurants' in gpt_response:
+    #     response_data = {
+    #         "gpt_restaurants": gpt_response['restaurants']
+    #     }
+    #     # 검색 기록 저장
+    #     AdongSearchHistory.objects.create(query=query)  # 검색 쿼리를 데이터베이스에 저장
+    # else:
+    #     response_data = {
+    #         "gpt_restaurants": [],
+    #         "message": "유효한 가맹점 정보가 없습니다."
+    #     }
+    #
+    # return Response(response_data)
 
 
 # 현재 위치 기준 추천 - 문화
