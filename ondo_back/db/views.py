@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework import status
 import requests
 from django.http import JsonResponse
+
+from .gpt_service import get_recommendations_from_csv
 from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory
 from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer
 import matplotlib
@@ -268,21 +270,14 @@ def adong_search(request):
     try:
         with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
-            writer.writerow(['User Location', 'Search', 'Radius', 'Restaurant Candidates'])
+            writer.writerow(['user_location', 'user_cuisine', 'restaurant_candidates'])
 
-            # 유저 위치 정보, 검색 기록, 반경, 음식점 리스트 추가
+            # 유저 위치 정보와 검색 기록, 음식점 리스트 추가
             restaurant_names = [restaurant['name'] for restaurant in serialized_restaurants]
-            writer.writerow([f"{latitude}, {longitude}", query, radius_m, restaurant_names])
+            writer.writerow([f"{latitude}, {longitude}", query, ', '.join(restaurant_names)])  # 리스트를 문자열로 변환하여 저장
 
-        # GPT 모듈에 CSV 파일 전달
-        with open(csv_file_path, 'rb') as f:
-            csv_content = ContentFile(f.read())
-            gpt_response = get_gpt_response(
-                user_location=(latitude, longitude),
-                Search=query,
-                radius=radius_m,
-                restaurant_candidates=csv_content
-            )
+        # get_recommendations_from_csv 함수 호출
+        gpt_response = get_recommendations_from_csv(csv_file_path)
 
     finally:
         # 임시 CSV 파일 삭제
