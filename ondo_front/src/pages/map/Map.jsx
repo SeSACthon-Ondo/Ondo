@@ -11,65 +11,82 @@ import Search from "../search/Search";
 import { initializeMap, setMarkerHandler } from './KakaoAPI';
 
 import style from './Map.module.css';
-import search from '../../assets/search.png'
+import search from '../../assets/search.png';
 import reload from '../../assets/reload.png';
 import back from '../../assets/back_black.png';
 
 export default function Map() {
-  const [lat, setLat] = useState(33.450701); // 초기 위도
-  const [lon, setLon] = useState(126.570667); // 초기 경도
+  const [lat, setLat] = useState(37.54902570673794); // 초기 위도
+  const [lon, setLon] = useState(127.07489169741761); // 초기 경도
   const [map, setMap] = useState(null); // 지도 객체
   const [geocoder, setGeocoder] = useState(null); // 지오코더 객체
   const [markers, setMarkers] = useState([]); // 마커 목록
   const [address, setAddress] = useState('알 수 없음'); // 주소 상태
   const [selectedMarker, setSelectedMarker] = useState(null); // 선택된 마커 정보 상태
-  const [isClicked, setIsClicked] = useState(false); //검색창
+  const [isClicked, setIsClicked] = useState(false); // 검색창
+  const [searchText, setSearchText] = useState('');
+  const [dummyData, setDummyData] = useState([
+    {
+      name: '세종대',
+      address: ' 서울특별시 광진구 능동로 209 세종대학교',
+      category: '한식',
+      menu: {
+        "메뉴1": "육회비빔밥",
+        "메뉴2": "불고기",
+        "메뉴3": "김치찌개",
+        "메뉴4": "소금구이",
+        "메뉴5": "새우튀김덮밥",
+      },
+    },
+    {
+      name: '건국대',
+      address: '서울특별시 광진구 능동로 120',
+      category: '양식',
+      menu: {
+        "메뉴1": "까르보나라",
+        "메뉴2": "페투치니",
+        "메뉴3": "스테이크"
+      },
+    },
+    {
+      name: '어린이대공원',
+      address: '서울특별시 광진구 능동로 216',
+      category: '일식',
+      menu: {
+        "메뉴1": "참치초밥",
+        "메뉴2": "연어초밥",
+        "메뉴3": "후토마끼"
+      },
+    } 
+  ]);
+
+  useEffect(() => {
+    console.log(searchText);
+  }, [searchText]);
 
   const onSearch = () => {
     setIsClicked(true);
   };
-  
 
-  //새로고침
+  // 새로고침
   const [refresh, setRefresh] = useState(1);
   const handleRefresh = () => {
     setRefresh(refresh * -1);
     setSelectedMarker(null);
   };
 
-  //KakaoAPI.js
+  // KakaoAPI.js
   useEffect(() => {
-    initializeMap("map", lat, lon, setMap, setGeocoder, () => {}, setAddress);
+    initializeMap("map", lat, lon, setMap, setGeocoder, setAddress, setLat, setLon);
   }, [refresh]);
 
-  const dummyData = [
-    {
-      name: '우리집',
-      address: '경기도 부천시 원미구 조마루로 134 보람 아주 1102, 1206',
-      category: 'HOME',
-      menu: {
-        "메뉴1": "비빔밥",
-        "메뉴2": "불고기",
-        "메뉴3": "김치찌개",
-        "메뉴4": "김치볶음밥",
-        "메뉴5": "불고기",
-      },
-    },
-    {
-      name: '우리집 옆',
-      address: '경기도 부천시 원미구 조마루로 135',
-      category: 'HOME',
-      menu: {
-        "메뉴1": "마라탕",
-        "메뉴2": "마라샹궈",
-        "메뉴3": "꿔바로우"
-      },
-    } 
-  ];
+  useEffect(() => {
+    if (address !== '제주특별자치도 제주시 아라동' && address !== '알 수 없음') {
+      console.log(address);
+      console.log(lat, lon);
+    }
+  }, [address]);
 
-  const dummyAI = ['김밥', '제육덮밥', '비빔밥', '김치찌개'];
-
-  // 더미데이터 사용
   useEffect(() => {
     if (map && geocoder) {
       // 기존 마커 제거
@@ -77,18 +94,24 @@ export default function Map() {
 
       // 새로운 마커 생성 및 설정
       const newMarkers = [];
-      dummyData.forEach(data => {
-        setMarkerHandler(geocoder, data.address, map, data.name, data.category, handleListItemClick)
+      const updatedData = dummyData.map(data => {
+        return setMarkerHandler(geocoder, data.address, map, data.name, data.category, handleListItemClick)
           .then(marker => {
             marker.name = data.name; // 마커에 name 저장
             marker.category = data.category; // 마커에 category 저장
             marker.menu = data.menu; // 마커에 menu 저장
             newMarkers.push(marker);
             setMarkers(prevMarkers => [...prevMarkers, marker]); // 마커를 상태에 추가
+            return { ...data, marker }; // 데이터에 마커 추가
           })
           .catch(error => {
             console.error(error);
+            return data; // 에러 발생 시 기존 데이터 반환
           });
+      });
+
+      Promise.all(updatedData).then(results => {
+        setDummyData(results);
       });
     }
   }, [map, geocoder]);
@@ -112,15 +135,17 @@ export default function Map() {
     });
   }, [markers]);
 
-  //카드 종류
+  // 카드 종류
   const type = localStorage.getItem('type');
-  const placeholder = type === '꿈나무'? '무엇이 드시고 싶나요?' : '무엇을 하고 싶나요?';
+  const placeholder = type === '꿈나무' ? '무엇이 드시고 싶나요?' : '무엇을 하고 싶나요?';
 
+  // 모달 리스트 클릭 시
   const handleListItemClick = (marker) => {
     setSelectedMarker(marker);
+    map.setCenter(marker.getPosition()); // 마커의 좌표로 지도의 중심 설정
   };
-   
-  //카드 종류에 따른 렌더링
+
+  // 카드 종류에 따른 렌더링
   const cardType = localStorage.getItem('type');
   let modalHeader = '';
   if (cardType === '꿈나무') {
@@ -129,26 +154,28 @@ export default function Map() {
     modalHeader = '주변에 있는 추천 문화 시설이에요!';
   }
 
-
   let headerText = '';
   const renderModalContent = () => {
     if (selectedMarker) {
       headerText = '';
       return (
-        <SearchList 
-          name = {selectedMarker.name}
-          category = {selectedMarker.category}
-          menu = {selectedMarker.menu}
-          refresh = {handleRefresh}
+        <SearchList
+          name={selectedMarker.name}
+          category={selectedMarker.category}
+          menu={selectedMarker.menu}
+          refresh={handleRefresh}
+          map={map}
         />
       );
     } else {
       headerText = modalHeader;
-      return <Near 
-        list={dummyData}
-        markers={markers}
-        onListItemClick={handleListItemClick}
-      />
+      return (
+        <Near
+          list={dummyData}
+          markers={markers}
+          onListItemClick={(marker) => handleListItemClick(marker, map)}
+        />
+      );
     }
   };
 
@@ -157,46 +184,52 @@ export default function Map() {
       <Header />
 
       <div className={style.search_bar} onClick={isClicked ? undefined : onSearch}>
-      {isClicked ? 
-      <img 
-      className={style.back}
-      onClick={() => {setIsClicked(false)}}
-      src={back} 
-      alt="back"/> : <></>}
+        {isClicked ? (
+          <img
+            className={style.back}
+            onClick={() => { setIsClicked(false); }}
+            src={back}
+            alt="back"
+          />
+        ) : <></>}
         <input
           type="text"
           placeholder={placeholder}
           spellCheck='false'
+          onChange={(e) => setSearchText(e.target.value)}
         />
         <img className={style.search} src={search} />
       </div>
 
-      {isClicked ?
-      <div className={style.search_on}>
-        <Search 
-          keywords = {dummyAI}
-        />
-      </div> 
-      : 
-      <></>}
+      {isClicked ? (
+        <div className={style.search_on}>
+          <Search
+            keywords={dummyAI}
+            setSearchText={setSearchText}
+          />
+        </div>
+      ) : <></>}
 
       <div
         id="map"
         style={{
           width: "100%",
-          height: "80%",
+          height: "60%",
         }}
       />
 
-      {isClicked ? <></> : <div onClick={handleRefresh} className={style.reload_box}>
-        <img src={reload} />
-      </div>}
+      {isClicked ? <></> : (
+        <div onClick={handleRefresh} className={style.reload_box}>
+          <img src={reload} />
+        </div>
+      )}
 
-      {isClicked ? <></> : <BottomModal 
-        inner={renderModalContent()} 
-        header={headerText}
-      />}
+      {isClicked ? <></> : (
+        <BottomModal
+          inner={renderModalContent()}
+          header={headerText}
+        />
+      )}
     </div>
   );
-
 }

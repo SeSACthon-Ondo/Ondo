@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import style from './Search.module.css';
 
-const Search = ({keywords}) => {
+const Search = ({keywords, setSearchText}) => {
     return (
         <div className={style.search_container}>
             <p className={style.recommend}>AI추천🪄</p>
@@ -13,7 +13,11 @@ const Search = ({keywords}) => {
 
             <div className={style.keyword_container}>
                 {keywords.map((keyword, index) => (
-                    <div key={index} className={style.keyword}>
+                    <div 
+                    key={index} 
+                    className={style.keyword}
+                    onClick={() => setSearchText(keyword)}
+                    >
                     {keyword}
                     </div>
                 ))}

@@ -39,6 +39,7 @@ const BottomModal = ({ inner, header }) => {
         className={`${style.modal_overlay} ${isOpen ? style.modalOpen : ""}`}
         onClick={handleOutsideClick}
       />
+      <div className={style.hr}></div>
       <div className={`${style.modal_container} ${isOpen ? style.modalOpen : ""}`}>
         <div className={style.modalContent} onClick={(e) => e.stopPropagation()}>
           <div className={headerHeight} onClick={toggleModal}>
