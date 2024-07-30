@@ -54,6 +54,28 @@ cuisine_prompt = """
 
 """
 
+prompt = PromptTemplate.from_template(template=cuisine_prompt)
+chain = LLMChain(prompt=prompt, llm=llm)
+
+def get_recommendations_from_csv(csv_file_path):
+    # CSV 파일 읽기
+    df = pd.read_csv(csv_file_path)
+
+    # 필요한 정보 추출
+    user_location = df['user_location'][0]  # 첫 번째 행의 사용자 위치
+    user_cuisine = df['user_cuisine'][0]  # 첫 번째 행의 사용자 음식
+    restaurant_candidates = df['restaurant_candidates'][0].split(',')  # 음식점 리스트를 쉼표로 분할
+
+    # 추천 음식점 정보 요청
+    recommended_restaurants = chain.invoke(input={
+        "user_location": user_location,
+        "user_cuisine": user_cuisine,
+        "restaurant_candidates": restaurant_candidates
+    })
+
+    return recommended_restaurants
+
+
 # prompt = PromptTemplate.from_template(template=cuisine_prompt)
 
 # restaurant_candidates = pd.read_csv("/Users/gwon-yonghyeon/Desktop/kwon/00_Coding/2024_sesac/restaurant_data_동대문구.csv")
@@ -97,24 +119,3 @@ cuisine_prompt = """
 #   "restaurant_candidates":restaurant_candidates_str
 #   })
 # print (recommand_restaurants)
-
-prompt = PromptTemplate.from_template(template=cuisine_prompt)
-chain = LLMChain(prompt=prompt, llm=llm)
-
-def get_recommendations_from_csv(csv_file_path):
-    # CSV 파일 읽기
-    df = pd.read_csv(csv_file_path)
-
-    # 필요한 정보 추출
-    user_location = df['user_location'][0]  # 첫 번째 행의 사용자 위치
-    user_cuisine = df['user_cuisine'][0]  # 첫 번째 행의 사용자 음식
-    restaurant_candidates = df['restaurant_candidates'][0].split(',')  # 음식점 리스트를 쉼표로 분할
-
-    # 추천 음식점 정보 요청
-    recommended_restaurants = chain.invoke(input={
-        "user_location": user_location,
-        "user_cuisine": user_cuisine,
-        "restaurant_candidates": restaurant_candidates
-    })
-
-    return recommended_restaurants
