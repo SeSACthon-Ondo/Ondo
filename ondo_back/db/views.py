@@ -1,3 +1,5 @@
+import math
+
 from django.shortcuts import render, get_object_or_404, get_list_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -18,6 +20,8 @@ from django.conf import settings
 import chardet
 import pandas as pd
 from geopy.distance import geodesic
+from django.db.models import Q
+from django.core.files.base import ContentFile
 
 
 @api_view(['GET'])
@@ -123,6 +127,59 @@ def noori_offline_infos(request):
     serializer = NooriOfflineInfosSerializer(offlineInfos, many=True)
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
+# 주변 가맹점 가져오기
+def find_nearby_restaurants(latitude, longitude, radius_m):
+    # 1도 위도는 약 111,000m
+    latitude_delta = radius_m / 111000  # 반경을 위도로 변환
+    longitude_delta = radius_m / (111000 * math.cos(math.radians(latitude)))  # 반경을 경도로 변환
+
+    # 1차 필터링: 위도, 경도 기준으로 반경 내 가맹점 검색
+    nearby_restaurants = Restaurant.objects.filter(
+        Q(latitude__gte=latitude - latitude_delta) &
+        Q(latitude__lte=latitude + latitude_delta) &
+        Q(longitude__gte=longitude - longitude_delta) &
+        Q(longitude__lte=longitude + longitude_delta)
+    )
+
+    # 직렬화 과정: 모든 가맹점 반환
+    serializer = RestaurantSerializer(nearby_restaurants, many=True)
+    serialized_restaurants = serializer.data  # 직렬화된 데이터
+
+    return serialized_restaurants  # 가맹점 리스트 반환
+# 주변 문화 센터 가져오기
+def find_nearby_stores(latitude, longitude, radius_m):
+    # 1도 위도는 약 111,000m
+    latitude_delta = radius_m / 111000  # 반경을 위도로 변환
+    longitude_delta = radius_m / (111000 * math.cos(math.radians(latitude)))  # 반경을 경도로 변환
+
+    # 1차 필터링: 위도, 경도 기준으로 반경 내 온라인 및 오프라인 가맹점 검색
+    nearby_online_stores = NooriOnlineStore.objects.filter(
+        Q(latitude__gte=latitude - latitude_delta) &
+        Q(latitude__lte=latitude + latitude_delta) &
+        Q(longitude__gte=longitude - longitude_delta) &
+        Q(longitude__lte=longitude + longitude_delta)
+    )
+
+    nearby_offline_stores = NooriOfflineStore.objects.filter(
+        Q(latitude__gte=latitude - latitude_delta) &
+        Q(latitude__lte=latitude + latitude_delta) &
+        Q(longitude__gte=longitude - longitude_delta) &
+        Q(longitude__lte=longitude + longitude_delta)
+    )
+
+    # 직렬화 과정: 모든 가맹점 반환
+    online_serializer = RestaurantSerializer(nearby_online_stores, many=True)
+    offline_serializer = RestaurantSerializer(nearby_offline_stores, many=True)
+
+    serialized_online_stores = online_serializer.data  # 직렬화된 온라인 가맹점 데이터
+    serialized_offline_stores = offline_serializer.data  # 직렬화된 오프라인 가맹점 데이터
+
+    # 두 가지 가맹점 리스트를 합쳐서 반환
+    return {
+        "online_stores": serialized_online_stores,
+        "offline_stores": serialized_offline_stores
+    }
+
 # 현재 위치 기준 추천 - 아동
 # db에 위도 경도 없어서 현재 에러 발생
 @api_view(['POST'])
@@ -130,6 +187,7 @@ def adong_send_address(request):
     road_name = request.data.get('road_name')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
+    radius_m = 300 # 반경 300m로 지정
 
     if road_name is None:
         return Response({"error": "도로명이 필요합니다."}, status=400)
@@ -137,56 +195,102 @@ def adong_send_address(request):
     if latitude is None or longitude is None:
         return Response({"error": "위도와 경도가 필요합니다."}, status=400)
 
-    # 도로명 주소에 기반하여 관련 주소를 찾음
-    related_addresses = Restaurant.objects.filter(address__icontains=road_name)
-    if not related_addresses.exists():
-        return Response({"message": "해당 도로명 주소와 일치하는 주소가 없습니다."}, status=404)
-
-    # 가까운 거리 계산을 위한 리스트 생성
-    nearby_restaurants = []
-    for restaurant in related_addresses:
-        restaurant_location = (restaurant.latitude, restaurant.longitude)  # 가맹점의 위도와 경도
-        user_location = (latitude, longitude)  # 사용자의 위도와 경도
-        distance = geodesic(user_location, restaurant_location).meters  # 두 지점 간의 거리 계산
-        nearby_restaurants.append((restaurant, distance))
-
-    # 정렬 후 상위 5개를 선택
-    nearby_restaurants.sort(key=lambda x: x[1])
-    top_5_nearby = nearby_restaurants[:5]
-
-    # 상위 5개 레스토랑을 직렬화
-    serializer = RestaurantSerializer([restaurant[0] for restaurant in top_5_nearby], many=True)
+    serialized_restaurants = find_nearby_restaurants(latitude, longitude, radius_m)
 
     # 검색 기록을 데이터베이스에서 가져오기
     search_records = AdongSearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
     search_history = [record.query for record in search_records]
 
-    if search_history:
-        # GPT 모듈에 검색 기록 전달
-        gpt_response = get_gpt_response(search_history)  # 용형 모듈 가져오는 코드
-    else:
-        gpt_response = {"message": "검색 기록이 없습니다."}
+    # CSV 파일 생성
+    csv_file_path = 'user_data.csv'
+    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(['User Location', 'Search History', 'Radius', 'Restaurant Candidates'])
 
-    return Response({
-        "nearby_restaurants": serializer.data,
-        "gpt_response": gpt_response
-    })
+        # 유저 위치 정보, 검색 기록, 반경, 음식점 리스트 추가
+        restaurant_names = [restaurant['name'] for restaurant in serialized_restaurants]  # 음식점 이름 리스트
+        writer.writerow([f"{latitude}, {longitude}", search_history, radius_m, restaurant_names])
+
+    # GPT 모듈에 CSV 파일 전달
+    with open(csv_file_path, 'rb') as f:
+        csv_content = ContentFile(f.read())
+        gpt_response = get_gpt_response(user_location=(latitude, longitude),search_history=search_history,
+                                        radius=radius_m,restaurant_candidates=csv_content)
+
+    # 임시 CSV 파일 삭제
+    os.remove(csv_file_path)
+
+    # GPT 모듈의 JSON 응답 처리
+    # 입출력 형태 맞춰야함
+    if isinstance(gpt_response, dict) and 'restaurants' in gpt_response:
+        # 프론트엔드로 응답할 가맹점 정보
+        response_data = {
+            "gpt_restaurants": gpt_response['restaurants']  # GPT에서 받은 가맹점 정보
+        }
+    else:
+        response_data = {
+            "gpt_restaurants": [],  # GPT 응답이 없을 경우 빈 리스트
+            "message": "유효한 가맹점 정보가 없습니다."
+        }
+
+    return Response(response_data)
 
 # 검색 - 아동
 @api_view(['POST'])
 def adong_search(request):
     # 요청에서 검색 쿼리 추출
+    road_name = request.data.get('road_name')
+    latitude = request.data.get('latitude')
+    longitude = request.data.get('longitude')
     query = request.data.get('query')
+    radius_m = 300  # 반경 300m로 지정
+
+    if road_name is None:
+        return Response({"error": "도로명이 필요합니다."}, status=400)
+
+    if latitude is None or longitude is None:
+        return Response({"error": "위도와 경도가 필요합니다."}, status=400)
+
     if not query:
         return Response({"error": "검색 쿼리를 제공해야 합니다."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    serialized_restaurants = find_nearby_restaurants(latitude, longitude, radius_m)
 
-    # gpt 답변 넣고 가져오는 기능 추가 필요
-    # 외부 모듈의 검색 함수 호출 기능 추가
-    # search_results = perform_search(query)
+    # CSV 파일 생성
+    csv_file_path = 'user_data.csv'
+    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(['User Location', 'Search', 'Radius', 'Restaurant Candidates'])
 
-    # 결과를 클라이언트에 반환
-    # return Response(search_results, status=status.HTTP_200_OK)
-    return Response(status=status.HTTP_200_OK)
+        # 유저 위치 정보, 검색 기록, 반경, 음식점 리스트 추가
+        restaurant_names = [restaurant['name'] for restaurant in serialized_restaurants]  # 음식점 이름 리스트
+        writer.writerow([f"{latitude}, {longitude}", query, radius_m, restaurant_names])
+
+    # GPT 모듈에 CSV 파일 전달
+    with open(csv_file_path, 'rb') as f:
+        csv_content = ContentFile(f.read())
+        gpt_response = get_gpt_response(user_location=(latitude, longitude), Search=query,
+                                        radius=radius_m, restaurant_candidates=csv_content)
+
+    # 임시 CSV 파일 삭제
+    os.remove(csv_file_path)
+
+    # GPT 모듈의 JSON 응답 처리
+    # 입출력 형태 맞춰야함
+    if isinstance(gpt_response, dict) and 'restaurants' in gpt_response:
+        # 프론트엔드로 응답할 가맹점 정보
+        response_data = {
+            "gpt_restaurants": gpt_response['restaurants']  # GPT에서 받은 가맹점 정보
+        }
+        # 검색 기록 저장
+        AdongSearchHistory.objects.create(query=query)  # 검색 쿼리를 데이터베이스에 저장
+    else:
+        response_data = {
+            "gpt_restaurants": [],  # GPT 응답이 없을 경우 빈 리스트
+            "message": "유효한 가맹점 정보가 없습니다."
+        }
+
+    return Response(response_data)
 
 # 현재 위치 기준 추천 - 문화
 @api_view(['POST'])
@@ -194,6 +298,7 @@ def noori_send_address(request):
     road_name = request.data.get('road_name')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
+    radius_m = 300 # 반경 300m로 지정
 
     if road_name is None:
         return Response({"error": "도로명이 필요합니다."}, status=400)
@@ -201,64 +306,100 @@ def noori_send_address(request):
     if latitude is None or longitude is None:
         return Response({"error": "위도와 경도가 필요합니다."}, status=400)
 
-    # 도로명 주소에 기반하여 관련 주소를 찾음
-    related_online_stores = NooriOnlineStore.objects.filter(address__icontains=road_name)
-    related_offline_stores = NooriOfflineStore.objects.filter(address__icontains=road_name)
-    combined_infos = list(related_online_stores) + list(related_offline_stores)
-
-    if not combined_infos:
-        return Response({"message": "해당 도로명 주소와 일치하는 주소가 없습니다."}, status=404)
-
-
-    # 가까운 거리 계산을 위한 리스트 생성
-    nearby_stores = []
-    for store in combined_infos:
-        store_location = (store.latitude, store.longitude)  # 스토어의 위도와 경도
-        user_location = (latitude, longitude)  # 사용자의 위도와 경도
-        distance = geodesic(user_location, store_location).meters  # 두 지점 간의 거리 계산
-        nearby_stores.append((store, distance))
-
-    # 거리 기준으로 정렬 후 상위 5개를 선택
-    nearby_stores.sort(key=lambda x: x[1])
-    top_5_nearby = nearby_stores[:5]
-
-    # 직렬화할 데이터 리스트 생성
-    serializer_data = []
-    for store, _ in top_5_nearby:
-        if isinstance(store, NooriOnlineStore):
-            serializer = NooriOnlineInfosSerializer(store)
-        elif isinstance(store, NooriOfflineStore):
-            serializer = NooriOfflineInfosSerializer(store)
-        serializer_data.append(serializer.data)
+    serialized_stores = find_nearby_stores(latitude, longitude, radius_m)
 
     # 검색 기록을 데이터베이스에서 가져오기
-    search_records = NooriSearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
+    search_records = AdongSearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
     search_history = [record.query for record in search_records]
 
-    if search_history:
-        # GPT 모듈에 검색 기록 전달
-        gpt_response = get_gpt_response(search_history)  # 용형 모듈 가져오는 코드
-    else:
-        gpt_response = {"message": "검색 기록이 없습니다."}
+    # CSV 파일 생성
+    csv_file_path = 'user_data.csv'
+    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(['User Location', 'Search History', 'Radius', 'Store Candidates'])
 
-    return Response({
-        "nearby_stores": serializer.data,
-        "gpt_response": gpt_response
-    })
+        # 유저 위치 정보, 검색 기록, 반경, 음식점 리스트 추가
+        store_names = [store['name'] for store in serialized_stores]  # 음식점 이름 리스트
+        writer.writerow([f"{latitude}, {longitude}", search_history, radius_m, store_names])
+
+    # GPT 모듈에 CSV 파일 전달
+    with open(csv_file_path, 'rb') as f:
+        csv_content = ContentFile(f.read())
+        gpt_response = get_gpt_response(user_location=(latitude, longitude), search_history=search_history,
+                                        radius=radius_m, store_candidates=csv_content)
+
+    # 임시 CSV 파일 삭제
+    os.remove(csv_file_path)
+
+    # GPT 모듈의 JSON 응답 처리
+    # 입출력 형태 맞춰야함
+    if isinstance(gpt_response, dict) and 'stores' in gpt_response:
+        # 프론트엔드로 응답할 가맹점 정보
+        response_data = {
+            "gpt_stores": gpt_response['stores']  # GPT에서 받은 가맹점 정보
+        }
+    else:
+        response_data = {
+            "gpt_stores": [],  # GPT 응답이 없을 경우 빈 리스트
+            "message": "유효한 가맹점 정보가 없습니다."
+        }
+
+    return Response(response_data)
 
 
 # 검색 - 문화
 @api_view(['POST'])
 def noori_search(request):
     # 요청에서 검색 쿼리 추출
+    road_name = request.data.get('road_name')
+    latitude = request.data.get('latitude')
+    longitude = request.data.get('longitude')
     query = request.data.get('query')
+    radius_m = 300  # 반경 300m로 지정
+
+    if road_name is None:
+        return Response({"error": "도로명이 필요합니다."}, status=400)
+
+    if latitude is None or longitude is None:
+        return Response({"error": "위도와 경도가 필요합니다."}, status=400)
+
     if not query:
         return Response({"error": "검색 쿼리를 제공해야 합니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # gpt 답변 넣고 가져오는 기능 추가 필요
-    # 외부 모듈의 검색 함수 호출 기능 추가
-    # search_results = perform_search(query)
+    serialized_stores = find_nearby_stores(latitude, longitude, radius_m)
 
-    # 결과를 클라이언트에 반환
-    # return Response(search_results, status=status.HTTP_200_OK)
-    return Response(status=status.HTTP_200_OK)
+    # CSV 파일 생성
+    csv_file_path = 'user_data.csv'
+    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(['User Location', 'Search', 'Radius', 'Store Candidates'])
+
+        # 유저 위치 정보, 검색 기록, 반경, 음식점 리스트 추가
+        store_names = [store['name'] for store in serialized_stores]  # 음식점 이름 리스트
+        writer.writerow([f"{latitude}, {longitude}", query, radius_m, store_names])
+
+    # GPT 모듈에 CSV 파일 전달
+    with open(csv_file_path, 'rb') as f:
+        csv_content = ContentFile(f.read())
+        gpt_response = get_gpt_response(user_location=(latitude, longitude), Search=query,
+                                        radius=radius_m, store_candidates=csv_content)
+
+    # 임시 CSV 파일 삭제
+    os.remove(csv_file_path)
+
+    # GPT 모듈의 JSON 응답 처리
+    # 입출력 형태 맞춰야함
+    if isinstance(gpt_response, dict) and 'stores' in gpt_response:
+        # 프론트엔드로 응답할 가맹점 정보
+        response_data = {
+            "gpt_stores": gpt_response['stores']  # GPT에서 받은 가맹점 정보
+        }
+        # 검색 기록 저장
+        NooriSearchHistory.objects.create(query=query)  # 검색 쿼리를 데이터베이스에 저장
+    else:
+        response_data = {
+            "gpt_stores": [],  # GPT 응답이 없을 경우 빈 리스트
+            "message": "유효한 가맹점 정보가 없습니다."
+        }
+
+    return Response(response_data)
