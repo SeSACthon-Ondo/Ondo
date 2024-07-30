@@ -1,7 +1,7 @@
 /* BottomModal.module.css */
 .modal_container {
   width: 100%;
-  height: 75%;
+  height: 86%;
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
   background-color: #FFFFFF;
@@ -16,7 +16,7 @@
 }
 
 .modalOpen {
-  transform: translateY(-55%); /* 화면 위로 올라옴 */
+  transform: translateY(-35%); /* 화면 위로 올라옴 */
 }
 
 .modalContent {
@@ -47,7 +47,7 @@
 
 .header_container img {
   text-align: center;
-  margin: auto;
+  margin: 15px auto;
 }
 
 .near_title {

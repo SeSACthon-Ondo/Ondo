@@ -14,4 +14,5 @@ urlpatterns = [
     path('adong/search/', views.adong_search, name='adong_search'),
     path('noori/send_address/', views.noori_send_address, name='noori_send_address'),
     path('noori/search/', views.noori_search, name='noori_search'),
+    path('save_search_result/', views.save_search_result, name='save_search_result'),
 ]

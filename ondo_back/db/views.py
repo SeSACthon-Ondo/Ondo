@@ -8,7 +8,7 @@ import requests
 from django.http import JsonResponse
 
 from .gpt_service import get_recommendations_from_csv
-from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory
+from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory, SearchResult
 from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer
 import matplotlib
 matplotlib.use('Agg')
@@ -27,13 +27,13 @@ from django.core.files.base import ContentFile
 
 @api_view(['GET'])
 def save_adong_infos(request):
-    file_path = os.path.join(settings.BASE_DIR, 'restaurant_data.csv')
+    file_path = os.path.join(settings.BASE_DIR, 'filtered_restaurant_data_동대문구.csv')
     if not os.path.exists(file_path):
         return Response({"error": "CSV file not found"}, status=status.HTTP_404_NOT_FOUND)
 
     with open(file_path, mode='r', encoding='utf-8') as file:
         # 수동으로 헤더 설정
-        fieldnames = ['가맹점명', '소재지도로명주소', '카테고리', '메뉴']
+        fieldnames = ['가맹점명', '소재지도로명주소', '위도', '경도', '카테고리', '메뉴']
         reader = csv.DictReader(file, fieldnames=fieldnames)
         next(reader)  # 헤더 행을 건너뜁니다.
 
@@ -51,6 +51,8 @@ def save_adong_infos(request):
                 Restaurant.objects.create(
                     name=row['가맹점명'],
                     address=row['소재지도로명주소'],
+                    latitude=row['위도'],
+                    longitude=row['경도'],
                     category=row['카테고리'],
                     menu=menu_json
                 )
@@ -62,10 +64,10 @@ def save_adong_infos(request):
 
 @api_view(['GET'])
 def save_noori_online_infos(request):
-    file_path = os.path.join(settings.BASE_DIR, '한국문화예술위원회_문화누리카드_온라인_가맹점_목록_20211222.csv')
+    file_path = os.path.join(settings.BASE_DIR, 'filtered_noori_online_data_서울.csv')
 
     try:
-        with open(file_path, newline='', encoding='euc-kr') as csvfile:
+        with open(file_path, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 NooriOnlineStore.objects.create(
@@ -82,30 +84,20 @@ def save_noori_online_infos(request):
 
 @api_view(['GET'])
 def save_noori_offline_infos(request):
-    file_path = os.path.join(settings.BASE_DIR, '한국문화예술위원회_문화누리카드_오프라인_가맹점_목록_20211222.csv')
+    file_path = os.path.join(settings.BASE_DIR, 'filtered_noori_offline_data_서울.csv')
 
-    # 여러 인코딩 시도
-    encodings = ['utf-8', 'euc-kr', 'cp949']
-
-    for encoding in encodings:
-        try:
-            with open(file_path, newline='', encoding=encoding) as csvfile:
-                reader = csv.DictReader(csvfile)
-                for row in reader:
-                    NooriOfflineStore.objects.create(
-                        name=row['가맹점명'],
-                        address=row['주소'],
-                        category=row['분류'],
-                    )
-            return Response({'status': 'success', 'message': f'Data saved successfully with encoding: {encoding}'})
-        except UnicodeDecodeError as e:
-            continue  # 다음 인코딩 시도
-        except KeyError as e:
-            return Response({'status': 'error', 'message': f'Missing column: {e}'}, status=400)
-        except Exception as e:
-            return Response({'status': 'error', 'message': str(e)}, status=500)
-
-    return Response({'status': 'error', 'message': 'Failed to read CSV file with all tried encodings'}, status=500)
+    try:
+        with open(file_path, newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                NooriOfflineStore.objects.create(
+                    name=row['가맹점명'],
+                    address=row['주소'],
+                    category=row['분류'],
+                )
+        return Response({'status': 'success', 'message': 'Data saved successfully'})
+    except Exception as e:
+        return Response({'status': 'error', 'message': str(e)}, status=500)
 
 
 api_view(['GET'])
@@ -430,3 +422,17 @@ def noori_search(request):
         }
 
     return Response(response_data)
+
+
+@api_view(['POST'])
+def save_search_result(request):
+    if request.method == 'POST':
+        food = request.data.get('food')
+        if not food:
+            return Response({'error': 'Food field is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        search_result = SearchResult(food=food)
+        search_result.save()
+        
+        return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
+    return Response({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

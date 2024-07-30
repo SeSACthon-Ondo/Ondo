@@ -1,12 +1,12 @@
 from django.db import models
 
 class Restaurant(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
-    category = models.CharField(max_length=100)
-    menu = models.JSONField()
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    category = models.CharField(max_length=255)
+    menu = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -19,7 +19,7 @@ class NooriOnlineStore(models.Model):
     category = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.store_name
+        return self.name
 
 
 class NooriOfflineStore(models.Model):
@@ -28,7 +28,7 @@ class NooriOfflineStore(models.Model):
     category = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.store_name
+        return self.name
 
 # �˻� ��� ����
 class AdongSearchHistory(models.Model):
@@ -44,3 +44,10 @@ class NooriSearchHistory (models.Model):
 
     def __str__(self):
         return self.query
+    
+
+class SearchResult(models.Model):
+    food = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.food
