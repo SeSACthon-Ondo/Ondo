@@ -66,11 +66,11 @@ const Main = () => {
                 <div className={style.more_container}>
                     <div className={style.more}>
                         <p>꿈나무 카드 알아보기</p>
-                        <div className={style.more_btn}>GO</div>
+                        <div onClick={() => navigate('/fooddescription')} className={style.more_btn}>GO</div>
                     </div>
                     <div className={style.more}>
                         <p>문화 누리 카드 알아보기</p>
-                        <div className={style.more_btn}>GO</div>
+                        <div onClick={() => navigate('/culturedescription')} className={style.more_btn}>GO</div>
                     </div>
                 </div>
             </div>
