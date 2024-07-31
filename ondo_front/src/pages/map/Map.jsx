@@ -9,6 +9,7 @@ import SearchList from "../../components/modal/SearchList";
 import Search from "../search/Search";
 
 import { initializeMap, setMarkerHandler } from './KakaoAPI';
+import { nearFoodHandler, searchFoodHandler, nearCultureHandler, searchCultureHandler } from './Api.js';
 
 import style from './Map.module.css';
 import search from '../../assets/search.png';
@@ -59,11 +60,16 @@ export default function Map() {
       },
     } 
   ]);
+  const dummyAI = ['김치볶음밥', '김치찌개', '김밥', '제육볶음'];
 
+  
+  //검색
+  // 검색어 상태
   useEffect(() => {
     console.log(searchText);
   }, [searchText]);
 
+  // 검색창 진입
   const onSearch = () => {
     setIsClicked(true);
   };
@@ -75,18 +81,26 @@ export default function Map() {
     setSelectedMarker(null);
   };
 
+
   // KakaoAPI.js
+  // 맵 렌더링
   useEffect(() => {
     initializeMap("map", lat, lon, setMap, setGeocoder, setAddress, setLat, setLon);
   }, [refresh]);
 
   useEffect(() => {
-    if (address !== '제주특별자치도 제주시 아라동' && address !== '알 수 없음') {
+    if (address !== '알 수 없음') {
       console.log(address);
       console.log(lat, lon);
+      if (type === '꿈나무') {
+        nearFoodHandler(address, lat, lon)
+      } else {
+        nearCultureHandler(address, lat, lon)
+      }
     }
-  }, [address]);
+  }, [address, lat, lon]);
 
+  // 마커 렌더링
   useEffect(() => {
     if (map && geocoder) {
       // 기존 마커 제거
@@ -99,7 +113,8 @@ export default function Map() {
           .then(marker => {
             marker.name = data.name; // 마커에 name 저장
             marker.category = data.category; // 마커에 category 저장
-            marker.menu = data.menu; // 마커에 menu 저장
+            marker.menu = data.menu;  // 마커에 menu 저장
+            marker.address = data.address; // 마커에 address 저장
             newMarkers.push(marker);
             setMarkers(prevMarkers => [...prevMarkers, marker]); // 마커를 상태에 추가
             return { ...data, marker }; // 데이터에 마커 추가
@@ -135,6 +150,7 @@ export default function Map() {
     });
   }, [markers]);
 
+
   // 카드 종류
   const type = localStorage.getItem('type');
   const placeholder = type === '꿈나무' ? '무엇이 드시고 싶나요?' : '무엇을 하고 싶나요?';
@@ -154,17 +170,27 @@ export default function Map() {
     modalHeader = '주변에 있는 추천 문화 시설이에요!';
   }
 
+  const searchHandler = () => {
+    if(type === '꿈나무') {
+      searchFoodHandler(address, lat, lon, searchText);
+    } else {
+      searchCultureHandler(address, lat, lon, searchText);
+    }
+  }
+
   let headerText = '';
   const renderModalContent = () => {
     if (selectedMarker) {
       headerText = '';
       return (
         <SearchList
-          name={selectedMarker.name}
-          category={selectedMarker.category}
-          menu={selectedMarker.menu}
-          refresh={handleRefresh}
-          map={map}
+          name= {selectedMarker.name}
+          category= {selectedMarker.category}
+          menu= {selectedMarker.menu}
+          address = {selectedMarker.address}
+          refresh= {handleRefresh}
+          map= {map}
+          type= {type}
         />
       );
     } else {
@@ -198,7 +224,7 @@ export default function Map() {
           spellCheck='false'
           onChange={(e) => setSearchText(e.target.value)}
         />
-        <img className={style.search} src={search} />
+        <img className={style.search} onClick={searchHandler} src={search} />
       </div>
 
       {isClicked ? (
@@ -206,6 +232,9 @@ export default function Map() {
           <Search
             keywords={dummyAI}
             setSearchText={setSearchText}
+            searchText = {searchText}
+            type = {type}
+            searchHandler = {searchHandler}
           />
         </div>
       ) : <></>}

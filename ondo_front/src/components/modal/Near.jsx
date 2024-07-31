@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { useEffect, useState } from 'react';
 
 import style from './BottomModal.module.css';
@@ -20,7 +19,6 @@ const Near = (props) => {
             className={style.list}
             onClick={() => {
               props.onListItemClick(item.marker);
-              console.log(item.marker);
             }} // 리스트 아이템 클릭 시
           >
             <img src={icon} alt="icon" />
@@ -36,4 +34,3 @@ const Near = (props) => {
 };
 
 export default Near;
-/* eslint-disable react/prop-types */

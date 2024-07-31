@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import style from './BottomModal.module.css';
 import back from '../../assets/back_black.png'
 import korea from '../../assets/한식.png';
@@ -11,18 +10,25 @@ import elseThing from '../../assets/else.png';
 const SearchList = (props) => {
   let imgSrc = null;
   console.log(props.category)
-  if (props.category === '한식') {
-    imgSrc = korea;
-  } else if (props.category === '중식') {
-    imgSrc = china;
-  } else if (props.category === '일식') {
-    imgSrc = japan;
-  } else if (props.category === '양식') {
-    imgSrc = western;
-  } else if (props.category === '편의점') {
-    imgSrc = conv;
-  } else {
-    imgSrc = elseThing;
+
+  switch(props.category) {
+    case '한식':
+      imgSrc = korea;
+      break;
+    case '일식':
+      imgSrc = japan;
+      break;
+    case '중식':
+      imgSrc = china;
+      break;
+    case '양식':
+      imgSrc = western;
+      break;
+    case '편의점':
+      imgSrc = conv;
+      break;
+    default:
+      imgSrc = elseThing;
   }
 
   return (
@@ -36,14 +42,17 @@ const SearchList = (props) => {
             </div>
         </div>
         <div className={style.hr}></div>
-        <h3>메뉴</h3>
+        <h3>주소</h3>
+        <p className={style.address}>{props.address}</p>
+        
+        {props.type === '꿈나무' ? <><h3>메뉴</h3>
         <ul>
           {Object.keys(props.menu).map(key => (
             <li key={key}>{props.menu[key]}</li>
           ))}
-        </ul>
+        </ul></> : <></>}
       </div>
   );
 }
-/* eslint-disable react/prop-types */
+
 export default SearchList;

@@ -129,6 +129,9 @@
   color: #717171;
   font-size: 13px;
 }
+.address {
+  padding-bottom: 15px;
+}
 
 /* 오버레이 추가 */
 .modal_overlay {

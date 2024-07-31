@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 import style from './Main.module.css';
 import icon from '../../assets/ondo_white.png';
-import card from '../../assets/card.png'
+import card from '../../assets/card.png';
+import card2 from '../../assets/card2.png';
 
 const Main = () => {
     const navigate = useNavigate();
@@ -49,7 +50,7 @@ const Main = () => {
                     </div>
 
                     <div className={style.card}>
-                        <img src={card}/>
+                        <img src={card2}/>
                         <div className={style.right_container}>
                             <div className={style.info_container}>
                                 <p className={style.info_name}>문화 누리 카드</p>
