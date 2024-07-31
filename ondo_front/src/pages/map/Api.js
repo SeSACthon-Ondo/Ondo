@@ -46,12 +46,17 @@ export const nearFoodHandler = async (address, lat, lon, setDummyData, setDummyA
     if (!response.ok) {
     throw new Error(`Error! status: ${response.status}`);
     }
+<<<<<<< HEAD
 
     const data = await response.json();
     console.log(data);
     setIsLoading(false);
     setRefresh(refresh * -1);
 
+=======
+    const data = await response.json();
+    console.log(data);
+>>>>>>> c3c5f913fa05f985f710cdb15b6944a91ff19c3e
     } catch (error) {
         console.error('Error fetching study data:', error);
     }
@@ -82,6 +87,7 @@ export const searchFoodHandler = async (address, lat, lon, text, setDummyData, s
         }
         );
 
+<<<<<<< HEAD
         if (!response.ok) {
             throw new Error(`Error! status: ${response.status}`);
         }
@@ -98,6 +104,17 @@ export const searchFoodHandler = async (address, lat, lon, text, setDummyData, s
         console.error('Error fetching study data:', error);
     }
 };
+=======
+    if (!response.ok) {
+    throw new Error(`Error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log(data);
+    } catch (error) {
+        console.error('Error fetching study data:', error);
+    }
+}
+>>>>>>> c3c5f913fa05f985f710cdb15b6944a91ff19c3e
 
 ///////////////////////////////////////////////////////////////
 //문화누리카드
@@ -111,6 +128,7 @@ export const nearCultureHandler = async (address, lat, lon, setDummyData, setDum
     console.log('문화누리 근처');
     console.log(req_data);
 
+<<<<<<< HEAD
     try {
         const response = await fetch(
         'http://127.0.0.1:8000/db/noori/send_address/',
@@ -122,6 +140,19 @@ export const nearCultureHandler = async (address, lat, lon, setDummyData, setDum
             },
         }
         );
+=======
+    // try {
+    //     const response = await fetch(
+    //     'http://127.0.0.1:8000/db/noori/send_address',
+    //     {
+    //         method: 'POST',
+    //         body: JSON.stringify(req_data),
+    //         headers: {
+    //         'Content-Type': 'application/json'
+    //         },
+    //     }
+    //     );
+>>>>>>> c3c5f913fa05f985f710cdb15b6944a91ff19c3e
 
     if (!response.ok) {
     throw new Error(`Error! status: ${response.status}`);
