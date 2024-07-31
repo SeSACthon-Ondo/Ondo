@@ -10,6 +10,7 @@ import Search from "../search/Search";
 
 import { initializeMap, setMarkerHandler } from './KakaoAPI';
 import { nearFoodHandler, searchFoodHandler, nearCultureHandler, searchCultureHandler } from './Api.js';
+import useDebounce from './useDebounce';
 
 import style from './Map.module.css';
 import search from '../../assets/search.png';
@@ -26,41 +27,45 @@ export default function Map() {
   const [selectedMarker, setSelectedMarker] = useState(null); // 선택된 마커 정보 상태
   const [isClicked, setIsClicked] = useState(false); // 검색창
   const [searchText, setSearchText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [dummyData, setDummyData] = useState([
     {
-      name: '세종대',
-      address: ' 서울특별시 광진구 능동로 209 세종대학교',
+      name: '춘천골 닭갈비',
+      address: ' 서울 광진구 군자로 70 나동 1층 105호',
       category: '한식',
       menu: {
-        "메뉴1": "육회비빔밥",
-        "메뉴2": "불고기",
-        "메뉴3": "김치찌개",
-        "메뉴4": "소금구이",
-        "메뉴5": "새우튀김덮밥",
+        "메뉴1": "뼈없는 닭갈비",
+        "메뉴2": "닭순살볶음밥",
+        "메뉴3": "해물볶음밥",
+        "메뉴4": "막국수",
       },
     },
     {
-      name: '건국대',
-      address: '서울특별시 광진구 능동로 120',
-      category: '양식',
-      menu: {
-        "메뉴1": "까르보나라",
-        "메뉴2": "페투치니",
-        "메뉴3": "스테이크"
-      },
-    },
-    {
-      name: '어린이대공원',
-      address: '서울특별시 광진구 능동로 216',
+      name: '가츠시',
+      address: '서울특별시 광진구 화양동 광나루로 418',
       category: '일식',
       menu: {
-        "메뉴1": "참치초밥",
-        "메뉴2": "연어초밥",
-        "메뉴3": "후토마끼"
+        "메뉴1": "안심돈까스",
+        "메뉴2": "소바정식",
+        "메뉴3": "돈까스 김치 나베"
+      },
+    },
+    {
+      name: '롬곡',
+      address: '서울 광진구 광나루로17길 18 1층',
+      category: '카페',
+      menu: {
+        "메뉴1": "바닐라라떼",
+        "메뉴2": "카페라떼",
+        "메뉴3": "돌체라떼"
       },
     } 
   ]);
-  const dummyAI = ['김치볶음밥', '김치찌개', '김밥', '제육볶음'];
+  const [dummyAI, setDummyAI] = useState(['닭갈비', '회', '돈까스', '까르보나라']);
+  const debouncedAddress = useDebounce(address, 500);
+  const debouncedLat = useDebounce(lat, 500);
+  const debouncedLon = useDebounce(lon, 500);
+  const [initialized, setInitialized] = useState(false); // 초기화 상태 추가
 
   
   //검색
@@ -87,18 +92,7 @@ export default function Map() {
   useEffect(() => {
     initializeMap("map", lat, lon, setMap, setGeocoder, setAddress, setLat, setLon);
   }, [refresh]);
-
-  useEffect(() => {
-    if (address !== '알 수 없음') {
-      console.log(address);
-      console.log(lat, lon);
-      if (type === '꿈나무') {
-        nearFoodHandler(address, lat, lon)
-      } else {
-        nearCultureHandler(address, lat, lon)
-      }
-    }
-  }, [address, lat, lon]);
+  
 
   // 마커 렌더링
   useEffect(() => {
@@ -170,13 +164,30 @@ export default function Map() {
     modalHeader = '주변에 있는 추천 문화 시설이에요!';
   }
 
+  useEffect(() => {
+    if (debouncedAddress !== '알 수 없음' && !initialized || refresh !== 1) {
+      console.log(debouncedAddress);
+      console.log(debouncedLat, debouncedLon);
+  
+      if (type === '꿈나무') {
+        nearFoodHandler(debouncedAddress, debouncedLat, debouncedLon, setDummyData, setDummyAI, setRefresh, refresh, setIsLoading);
+      } else {
+        nearCultureHandler(debouncedAddress, debouncedLat, debouncedLon, setDummyData, setDummyAI, setRefresh, refresh, setIsLoading);
+      }
+      setInitialized(true); // 첫 실행 후 초기화 상태 설정
+    }
+  }, [debouncedAddress, debouncedLat, debouncedLon, initialized, type, refresh]);
+  
+  //debouncedAddress, debouncedLat, debouncedLon
+
   const searchHandler = () => {
     if(type === '꿈나무') {
-      searchFoodHandler(address, lat, lon, searchText);
+      searchFoodHandler(address, lat, lon, searchText, setDummyData, setIsClicked, setRefresh, refresh, setIsLoading);
     } else {
-      searchCultureHandler(address, lat, lon, searchText);
+      searchCultureHandler(address, lat, lon, searchText, setDummyData, setIsClicked, setRefresh, refresh, setIsLoading);
     }
   }
+  
 
   let headerText = '';
   const renderModalContent = () => {
@@ -208,7 +219,7 @@ export default function Map() {
   return (
     <div className={style.map_container}>
       <Header />
-
+      {isLoading && <Loading />}
       <div className={style.search_bar} onClick={isClicked ? undefined : onSearch}>
         {isClicked ? (
           <img
@@ -247,13 +258,13 @@ export default function Map() {
         }}
       />
 
-      {isClicked ? <></> : (
+      {isClicked || isLoading ? <></> : (
         <div onClick={handleRefresh} className={style.reload_box}>
           <img src={reload} />
         </div>
       )}
 
-      {isClicked ? <></> : (
+      {isClicked || isLoading ? <></> : (
         <BottomModal
           inner={renderModalContent()}
           header={headerText}
