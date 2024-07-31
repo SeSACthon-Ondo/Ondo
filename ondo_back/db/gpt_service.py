@@ -1,13 +1,10 @@
-import getpass
 import os
 import pandas as pd
 
 from dotenv import load_dotenv
 from langchain.chains.llm import LLMChain
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
-from geopy.distance import geodesic
 
 load_dotenv()
 
@@ -64,7 +61,7 @@ def get_recommendations_from_csv(csv_file_path):
     # 필요한 정보 추출
     user_location = df['user_location'][0]  # 첫 번째 행의 사용자 위치
     user_cuisine = df['user_cuisine'][0]  # 첫 번째 행의 사용자 음식
-    restaurant_candidates = df['restaurant_candidates'][0].split(',')  # 음식점 리스트를 쉼표로 분할
+    restaurant_candidates = df['restaurant_candidates'][0].split(', ')  # 음식점 리스트를 쉼표로 분할
 
     # 추천 음식점 정보 요청
     recommended_restaurants = chain.invoke(input={
@@ -74,48 +71,3 @@ def get_recommendations_from_csv(csv_file_path):
     })
 
     return recommended_restaurants
-
-
-# prompt = PromptTemplate.from_template(template=cuisine_prompt)
-
-# restaurant_candidates = pd.read_csv("/Users/gwon-yonghyeon/Desktop/kwon/00_Coding/2024_sesac/restaurant_data_동대문구.csv")
-
-# 여기부터 테스트 코드
-# # restaurant_candidates_str = restaurant_candidates.to_string(index=False)
-#
-# # 테스트용 데이터
-# user_location = "37.5665, 126.9780"  # 서울의 위도와 경도
-# user_cuisine = "고기"  # 유저가 원하는 음식
-#   # 반경 5km
-#
-# # 입력 받아야 할 변수들
-# # user_location
-# # user_cuisine
-# # restaurant_candidates
-#
-# # 반경 5km 내의 음식점 필터링
-# def filter_restaurants_within_radius(restaurant_df, user_location, radius_km=5):
-#     def is_within_radius(row):
-#         restaurant_location = (row['위도'], row['경도'])
-#         return geodesic(user_location, restaurant_location).km <= radius_km
-#
-#     filtered_df = restaurant_df[restaurant_df.apply(is_within_radius, axis=1)]
-#     return filtered_df
-#
-# filtered_restaurants = filter_restaurants_within_radius(restaurant_candidates, user_location)
-#
-# # 필요 데이터만 선택
-# filtered_restaurants = filtered_restaurants[['가맹점명', '카테고리', '소재지도로명주소', '메뉴']]
-# restaurant_candidates_str = filtered_restaurants.head(10).to_json(orient='records', force_ascii=False)
-#
-# print(restaurant_candidates_str)
-
-# 여기까지 테스트 코드
-
-# chain = LLMChain(prompt=prompt, llm=llm)
-# recommand_restaurants = chain.invoke(input={
-#   "user_location":user_location,
-#   "user_cuisine":user_cuisine,
-#   "restaurant_candidates":restaurant_candidates_str
-#   })
-# print (recommand_restaurants)
