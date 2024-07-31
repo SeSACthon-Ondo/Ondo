@@ -29,7 +29,7 @@ import re
 
 @api_view(['GET'])
 def save_adong_infos(request):
-    file_path = os.path.join(settings.BASE_DIR, 'filtered_restaurant_data_동대문구.csv')
+    file_path = os.path.join(settings.BASE_DIR, 'filtered_restaurant_data_광진구.csv')
     if not os.path.exists(file_path):
         return Response({"error": "CSV file not found"}, status=status.HTTP_404_NOT_FOUND)
 
