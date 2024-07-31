@@ -9,6 +9,8 @@ from django.http import JsonResponse
 
 from .gpt_service_adong_search import get_recommendations_from_csv
 from .gpt_service_adong_address import get_recommendations_from_history
+from .nutrient_recommend import get_nutrient_recommend
+from .favorite_recommend import get_favorite_recommend
 from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory, SearchResult
 from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer
 import matplotlib
@@ -229,6 +231,9 @@ def adong_send_address(request):
 
         # get_recommendations_from_csv 함수 호출
         gpt_response = get_recommendations_from_history(csv_file_path)
+        # nutrient_recommend = get_nutrient_recommend(csv_file_path)
+        favorite_recommend = get_favorite_recommend(csv_file_path)
+        # print(nutrient_recommend['text'])
 
     finally:
         # 임시 CSV 파일 삭제
@@ -237,7 +242,7 @@ def adong_send_address(request):
 
     text_data = gpt_response['text']
 
-    pattern = r"음식점 이름:|음식점 카테고리:|음식점 위치:|음식점 메뉴:|추천 이유 :"
+    pattern = r"음식점 이름:|음식점 카테고리:|음식점 위치:|음식점 메뉴:"
     replacement = {
         "음식점 이름:": '"name": "',
         "음식점 카테고리:": '"category": "',
@@ -252,8 +257,19 @@ def adong_send_address(request):
     new_string = new_string.replace(",\n    ", '",\n    ').replace(',\n   }', '"\n   }')
 
     # JSON으로 로드
-    data = json.loads(new_string)
-    return Response(data)
+    gpt_data = json.loads(new_string)
+    print(gpt_data)
+    favorite_data = favorite_recommend['text']
+    def transform_recommendations(input_string):
+        menu_items = re.findall(r'추천 메뉴\s*:\s*([^,\n]+)', input_string)
+        recommendations = ', '.join(menu_items)
+        result = {"recommend": recommendations}
+        return json.dumps(result, ensure_ascii=False)
+
+    favorite_result = transform_recommendations(favorite_data)
+    combined_result = {gpt_data, favorite_result}
+
+    return Response(combined_result)
 
 # 검색 - 아동
 @api_view(['POST'])
