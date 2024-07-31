@@ -1,10 +1,21 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 import icon from '../../assets/ondo_white.png';
 import style from './Onboarding.module.css';
 
 const Onboarding = () => {
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            navigate('/main');
+        }, 2000);
+
+        // Clean up the timer if the component is unmounted before the timeout
+        return () => clearTimeout(timer);
+    }, [navigate]);
+
     const goMainHandler = () => {
         navigate('/main');
     }
