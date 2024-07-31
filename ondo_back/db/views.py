@@ -257,6 +257,11 @@ def adong_search(request):
 
     # 주변 음식점 검색
     serialized_restaurants = find_nearby_restaurants(latitude, longitude, radius_m)
+
+    # 예외 처리: 데이터가 없는 경우
+    if not serialized_restaurants:
+        return Response(None, status=204)  # 204 No Content로 null 반환
+
     # # CSV 파일 경로 설정
     csv_file_path = './test.csv'
 
@@ -284,7 +289,6 @@ def adong_search(request):
 
         # get_recommendations_from_csv 함수 호출
         gpt_response = get_recommendations_from_csv(csv_file_path)
-        print(gpt_response)
 
     finally:
         # 임시 CSV 파일 삭제
@@ -293,15 +297,22 @@ def adong_search(request):
 
     text_data = gpt_response['text']
 
-    new_string = text_data
-    new_string = new_string.replace("음식점 이름:", '"name": "')
-    new_string = new_string.replace("음식점 카테고리:", '"category": "')
-    new_string = new_string.replace("음식점 위치:", '"address": "')
-    new_string = new_string.replace("음식점 메뉴:", '"menu": "')
-    new_string = new_string.replace(",\n    ", '",\n    ')
-    new_string = new_string.replace(',\n   }', '"\n   }')
-    data = json.loads(new_string)
+    pattern = r"음식점 이름:|음식점 카테고리:|음식점 위치:|음식점 메뉴:"
+    replacement = {
+        "음식점 이름:": '"name": "',
+        "음식점 카테고리:": '"category": "',
+        "음식점 위치:": '"address": "',
+        "음식점 메뉴:": '"menu": "'
+    }
 
+    # 패턴에 맞는 문자열을 대체
+    new_string = re.sub(pattern, lambda x: replacement[x.group(0)], text_data)
+
+    # 불필요한 문자열 대체
+    new_string = new_string.replace(",\n    ", '",\n    ').replace(',\n   }', '"\n   }')
+
+    # JSON으로 로드
+    data = json.loads(new_string)
     return Response(data)
 
 
