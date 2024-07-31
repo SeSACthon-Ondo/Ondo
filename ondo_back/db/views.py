@@ -184,7 +184,7 @@ def adong_send_address(request):
     road_name = request.data.get('road_name')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
-    radius_m = 200  # 반경 200m로 지정
+    radius_m = 1000  # 반경 200m로 지정
 
     # 입력 값 유효성 검사
     if not road_name:
@@ -263,7 +263,7 @@ def adong_search(request):
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
     query = request.data.get('query')
-    radius_m = 200  # 반경 200m로 지정
+    radius_m = 1000  # 반경 200m로 지정
 
     # 입력 값 유효성 검사
     if not road_name:
