@@ -7,7 +7,8 @@ from rest_framework import status
 import requests
 from django.http import JsonResponse
 
-from .gpt_service import get_recommendations_from_csv
+from .gpt_service_adong_search import get_recommendations_from_csv
+from .gpt_service_adong_address import get_recommendations_from_history
 from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory, SearchResult
 from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer
 import matplotlib
@@ -178,13 +179,12 @@ def find_nearby_stores(latitude, longitude, radius_m):
     }
 
 # 현재 위치 기준 추천 - 아동
-# db에 위도 경도 없어서 현재 에러 발생
 @api_view(['POST'])
 def adong_send_address(request):
     road_name = request.data.get('road_name')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
-    radius_m = 300  # 반경 300m로 지정
+    radius_m = 200  # 반경 200m로 지정
 
     # 입력 값 유효성 검사
     if not road_name:
@@ -196,44 +196,64 @@ def adong_send_address(request):
     # 주변 음식점 검색
     serialized_restaurants = find_nearby_restaurants(latitude, longitude, radius_m)
 
+    # 예외 처리: 데이터가 없는 경우
+    if not serialized_restaurants:
+        return Response(None, status=204)  # 204 No Content로 null 반환
+
     # 검색 기록 가져오기
     search_history = list(AdongSearchHistory.objects.values_list('query', flat=True).order_by('-timestamp')[:10])
 
-    # CSV 파일 생성
-    csv_file_path = 'user_data.csv'
-    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerow(['User Location', 'Search History', 'Radius', 'Restaurant Candidates'])
+    # # CSV 파일 경로 설정
+    csv_file_path = './test.csv'
 
-        # 유저 위치 정보, 검색 기록, 반경, 음식점 리스트 추가
-        restaurant_names = [restaurant['name'] for restaurant in serialized_restaurants]
-        writer.writerow([f"{latitude}, {longitude}", search_history, radius_m, restaurant_names])
+    try:
+        # CSV 파일 생성 및 열 제목 추가
+        with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(['user_location', 'user_cuisine_history', 'restaurant_candidates'])
 
-    # GPT 모듈에 CSV 파일 전달
-    with open(csv_file_path, 'rb') as f:
-        csv_content = ContentFile(f.read())
-        gpt_response = get_gpt_response(
-            user_location=(latitude, longitude),
-            search_history=search_history,
-            radius=radius_m,
-            restaurant_candidates=csv_content
-        )
+            # 유저 위치 정보와 검색 기록 추가
+            restaurant_info_list = []
+            for restaurant in serialized_restaurants:
+                restaurant_info = {
+                    '가맹점명': restaurant['name'],
+                    '카테고리': restaurant['category'],
+                    '소재지도로명주소': restaurant['address'],
+                    '메뉴': restaurant['menu']
+                }
+                restaurant_info_list.append(restaurant_info)
 
-    # 임시 CSV 파일 삭제
-    os.remove(csv_file_path)
+            # 리스트를 JSON 형식으로 변환하여 저장
+            json_data = json.dumps(restaurant_info_list, ensure_ascii=False)
+            writer.writerow([f"{latitude}, {longitude}", search_history, json_data])
 
-    # GPT 모듈의 JSON 응답 처리
-    if isinstance(gpt_response, dict) and 'restaurants' in gpt_response:
-        response_data = {
-            "gpt_restaurants": gpt_response['restaurants']
-        }
-    else:
-        response_data = {
-            "gpt_restaurants": [],
-            "message": "유효한 가맹점 정보가 없습니다."
-        }
+        # get_recommendations_from_csv 함수 호출
+        gpt_response = get_recommendations_from_history(csv_file_path)
 
-    return Response(response_data)
+    finally:
+        # 임시 CSV 파일 삭제
+        if os.path.exists(csv_file_path):
+            os.remove(csv_file_path)
+
+    text_data = gpt_response['text']
+
+    pattern = r"음식점 이름:|음식점 카테고리:|음식점 위치:|음식점 메뉴:|추천 이유 :"
+    replacement = {
+        "음식점 이름:": '"name": "',
+        "음식점 카테고리:": '"category": "',
+        "음식점 위치:": '"address": "',
+        "음식점 메뉴:": '"menu": "'
+    }
+
+    # 패턴에 맞는 문자열을 대체
+    new_string = re.sub(pattern, lambda x: replacement[x.group(0)], text_data)
+
+    # 불필요한 문자열 대체
+    new_string = new_string.replace(",\n    ", '",\n    ').replace(',\n   }', '"\n   }')
+
+    # JSON으로 로드
+    data = json.loads(new_string)
+    return Response(data)
 
 # 검색 - 아동
 @api_view(['POST'])
@@ -254,6 +274,9 @@ def adong_search(request):
 
     if not query:
         return Response({"error": "검색 쿼리를 제공해야 합니다."}, status=400)
+
+    # 검색 기록 저장
+    AdongSearchHistory.objects.create(query=query)  # 검색 쿼리를 데이터베이스에 저장
 
     # 주변 음식점 검색
     serialized_restaurants = find_nearby_restaurants(latitude, longitude, radius_m)
