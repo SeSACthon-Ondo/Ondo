@@ -3,7 +3,7 @@ from .models import Restaurant, NooriOfflineStore, NooriOnlineStore
 import json
 
 class RestaurantSerializer(serializers.ModelSerializer):
-    menu = serializers.SerializerMethodField()
+    # menu = serializers.SerializerMethodField()
 
     class Meta:
         model = Restaurant
