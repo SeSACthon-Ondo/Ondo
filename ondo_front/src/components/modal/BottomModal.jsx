@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
 import style from './BottomModal.module.css';
 import swap from '../../assets/swap_bar.png';
@@ -53,5 +52,4 @@ const BottomModal = ({ inner, header }) => {
   );
 };
 
-/* eslint-enable react/prop-types */
 export default BottomModal;
