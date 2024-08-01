@@ -14,8 +14,8 @@ from .gpt_service_adong_address import get_recommendations_from_history
 from .nutrient_recommend import get_nutrient_recommend
 from .gpt_service_noori_search import get_noori_from_csv
 from .favorite_recommend import get_favorite_recommend
-from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory, SearchResult
-from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer
+from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory, SearchResult, Review
+from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer, ReviewSerializer
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -128,146 +128,130 @@ def noori_offline_infos(request):
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
 def calculate_latitude_longitude_delta(radius_m, latitude):
-    # 1도 위도는 약 111,000m
-    latitude_delta = radius_m / 111000  # 반경을 위도로 변환
-    longitude_delta = radius_m / (111000 * math.cos(math.radians(latitude)))  # 반경을 경도로 변환
+    latitude_delta = radius_m / 111000
+    longitude_delta = radius_m / (111000 * math.cos(math.radians(latitude)))
     return latitude_delta, longitude_delta
 
 def find_nearby_restaurants(latitude, longitude, radius_m):
-    # 반경에 따른 위도 및 경도 차이 계산
     latitude_delta, longitude_delta = calculate_latitude_longitude_delta(radius_m, latitude)
-
-    # 1차 필터링: 위도, 경도 기준으로 반경 내 가맹점 검색
     nearby_restaurants = Restaurant.objects.filter(
         latitude__gte=latitude - latitude_delta,
         latitude__lte=latitude + latitude_delta,
         longitude__gte=longitude - longitude_delta,
         longitude__lte=longitude + longitude_delta
     )
-
-    # 직렬화 과정: 모든 가맹점 반환
     serializer = RestaurantSerializer(nearby_restaurants, many=True)
-    serialized_restaurants = serializer.data  # 직렬화된 데이터
-
-    return serialized_restaurants  # 가맹점 리스트 반환
+    return serializer.data
 
 def extract_district(road_name):
-    # 도로명 주소에서 구/군 정보를 정규 표현식으로 추출
     match = re.search(r'(.+구|.+군)', road_name)
-    if match:
-        return match.group(0)
-    return None
+    return match.group(0) if match else None
 
 def find_nearby_stores_by_road_name(road_name):
-    # 도로명 주소에서 구/군 정보 추출
     district = extract_district(road_name)
-
     if not district:
-        return []  # 구/군 정보가 없으면 빈 리스트 반환
+        return []
 
-    # 2차 필터링: 도로명 주소의 구/군 기준으로 가맹점 검색
-    nearby_stores = NooriOfflineStore.objects.filter(
-        Q(address__icontains=district)  # 주소에 구/군 정보가 포함된 가맹점 검색
-    )
-
-    # 직렬화 과정: 모든 가맹점 반환
+    nearby_stores = NooriOfflineStore.objects.filter(Q(address__icontains=district))
     serializer = NooriOfflineInfosSerializer(nearby_stores, many=True)
-    serialized_stores = serializer.data  # 직렬화된 데이터
+    return serializer.data
 
-    return serialized_stores  # 가맹점 리스트 반환
+def review_search(serialized_restaurants):
+    for rest in serialized_restaurants:
+        id = rest['id']
+        reviews = Review.objects.filter(restaurant_id=id)
+        s_reviews = ReviewSerializer(reviews, many=True)
+        rest['reviews'] = s_reviews.data
 
-# 현재 위치 기준 추천 - 아동
+def convert_string_(input_string):
+    new_string = input_string.replace("음식점 이름:", '"name": "')
+    new_string = new_string.replace("음식점 카테고리:", '"category": "')
+    new_string = new_string.replace("음식점 위치:", '"address": "')
+    new_string = new_string.replace("음식점 메뉴:", '"menu": "')
+    new_string = new_string.replace("음식점 리뷰:", '"review": "')
+    new_string = new_string.replace(",\n    ", '",\n    ')
+    new_string = new_string.replace(',\n   }', '"\n   }')
+    return new_string
+
+def convert_recommend(input_string):
+    new_string = input_string.replace("[\n   {\n      추천 메뉴 :", '[\n   {\n      "recommend": "')
+    new_string = new_string.replace("\n   },\n   {\n      추천 메뉴 :", ',')
+    new_string = new_string.replace("\n   }\n]", '"\n   }\n]')
+    return new_string
+
 @api_view(['POST'])
 def adong_send_address(request):
     road_name = request.data.get('road_name')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
-    radius_m = 777  # 반경 200m로 지정
+    radius_m = 500  # 반경 777m로 지정
 
-    # 입력 값 유효성 검사
     if not road_name:
         return Response({"error": "도로명이 필요합니다."}, status=400)
-
     if latitude is None or longitude is None:
         return Response({"error": "위도와 경도가 필요합니다."}, status=400)
 
-    # 주변 음식점 검색
     serialized_restaurants = find_nearby_restaurants(latitude, longitude, radius_m)
+    review_search(serialized_restaurants)
 
-    # 예외 처리: 데이터가 없는 경우
     if not serialized_restaurants:
-        return Response(None, status=204)  # 204 No Content로 null 반환
+        return Response(None, status=204)
 
-    # 검색 기록 가져오기
     search_history = list(AdongSearchHistory.objects.values_list('query', flat=True).order_by('-timestamp')[:10])
 
-    # # CSV 파일 경로 설정
     csv_file_path = './test.csv'
+    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(['user_location', 'user_cuisine_history', 'restaurant_candidates', 'review_data'])
 
-    try:
-        # CSV 파일 생성 및 열 제목 추가
-        with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
-            writer = csv.writer(file)
-            writer.writerow(['user_location', 'user_cuisine_history', 'restaurant_candidates'])
+        restaurant_info_list = []
+        for restaurant in serialized_restaurants:
+            restaurant_info = {
+                '가맹점명': restaurant['name'],
+                '카테고리': restaurant['category'],
+                '소재지도로명주소': restaurant['address'],
+                '메뉴': restaurant['menu'],
+                '리뷰': restaurant['reviews']
+            }
+            restaurant_info_list.append(restaurant_info)
 
-            # 유저 위치 정보와 검색 기록 추가
-            restaurant_info_list = []
-            for restaurant in serialized_restaurants:
-                restaurant_info = {
-                    '가맹점명': restaurant['name'],
-                    '카테고리': restaurant['category'],
-                    '소재지도로명주소': restaurant['address'],
-                    '메뉴': restaurant['menu']
-                }
-                restaurant_info_list.append(restaurant_info)
+        review_info_list = []
+        for res in serialized_restaurants:
+            result = {
+                '가맹점명': res['name'],
+                '리뷰': res['reviews']
+            }
+            review_info_list.append(result)
 
-            # 리스트를 JSON 형식으로 변환하여 저장
-            json_data = json.dumps(restaurant_info_list, ensure_ascii=False)
-            writer.writerow([f"{latitude}, {longitude}", search_history, json_data])
+        restaurant_json_data = json.dumps(restaurant_info_list, ensure_ascii=False)
+        review_json_data = json.dumps(review_info_list, ensure_ascii=False)
 
-        # get_recommendations_from_csv 함수 호출
-        gpt_response = get_recommendations_from_history(csv_file_path)
-        # nutrient_recommend = get_nutrient_recommend(csv_file_path)
-        favorite_recommend = get_favorite_recommend(csv_file_path)
+        writer.writerow([f"{latitude}, {longitude}", search_history, restaurant_json_data, review_json_data])
 
-    finally:
-        # 임시 CSV 파일 삭제
-        if os.path.exists(csv_file_path):
-            os.remove(csv_file_path)
+    gpt_response = get_recommendations_from_history(csv_file_path)
+    favorite_recommend = get_favorite_recommend(csv_file_path)
 
-    gpt_data = gpt_response['text']
-
+    print(gpt_response['text'])
     def convert_string(input_string):
         new_string = input_string
-        new_string = new_string.replace("음식점 이름:", '"name": "')
-        new_string = new_string.replace("음식점 카테고리:", '"category": "')
-        new_string = new_string.replace("음식점 위치:", '"address": "')
-        new_string = new_string.replace("음식점 메뉴:", '"menu": "')
-        new_string = new_string.replace(",\n    ", '",\n    ')
-        new_string = new_string.replace(',\n   }', '"\n   }')
+        new_string = new_string.replace("음식점 이름: ", '"name": "')
+        new_string = new_string.replace("음식점 카테고리: ", '"category": "')
+        new_string = new_string.replace("음식점 위치: ", '"address": "')
+        new_string = new_string.replace("음식점 메뉴: ", '"menu": "')
+        new_string = new_string.replace("음식점 리뷰: ", '"review": "')
+
+        new_string = new_string.replace(",\n      ", '",\n      ')
+        new_string = new_string.replace('\n   }', '"\n   }')
+
         return new_string
 
-    gpt_data = convert_string(gpt_data)
+    converted_string = convert_string(gpt_response['text'])
+    print(converted_string)
 
-    # ai 추천 기능
-    favorite_data = favorite_recommend['text']
 
-    def convert_recommend(input_string):
-        new_string = input_string
-        new_string = new_string.replace("[\n   {\n      추천 메뉴 :", '[\n   {\n      "recommend": "')
-        new_string = new_string.replace("\n   },\n   {\n      추천 메뉴 :", ',')
-        new_string = new_string.replace("\n   }\n]", '"\n   }\n]')
-        return new_string
+    a = json.loads(converted_string)
 
-    favorite_data = convert_recommend(favorite_data)
-
-    gpt_data = json.loads(gpt_data)
-    favorite_data = json.loads(favorite_data)
-    combined_data = {
-        "gpt_data": gpt_data,
-        "favorite_data": favorite_data
-    }
-    return Response(combined_data)
+    return Response(a)
 
 # 검색 - 아동
 @api_view(['POST'])
@@ -277,7 +261,7 @@ def adong_search(request):
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
     query = request.data.get('query')
-    radius_m = 777  # 반경 200m로 지정
+    radius_m = 500  # 반경 200m로 지정
 
     # 입력 값 유효성 검사
     if not road_name:
@@ -294,6 +278,7 @@ def adong_search(request):
 
     # 주변 음식점 검색
     serialized_restaurants = find_nearby_restaurants(latitude, longitude, radius_m)
+    review_search(serialized_restaurants)
 
     # 예외 처리: 데이터가 없는 경우
     if not serialized_restaurants:
@@ -303,10 +288,10 @@ def adong_search(request):
     csv_file_path = './test.csv'
 
     try:
-    # CSV 파일 생성 및 열 제목 추가
+        # CSV 파일 생성 및 열 제목 추가
         with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
-            writer.writerow(['user_location', 'user_cuisine', 'restaurant_candidates'])
+            writer.writerow(['user_location', 'user_cuisine', 'restaurant_candidates', 'review_data'])
 
             # 유저 위치 정보와 검색 기록 추가
             restaurant_info_list = []
@@ -320,9 +305,18 @@ def adong_search(request):
                 }
                 restaurant_info_list.append(restaurant_info)
 
+            review_info_list = []
+            for res in serialized_restaurants:
+                result = {
+                    '가맹점명': res['name'],
+                    '리뷰': res['reviews']
+                }
+                review_info_list.append(result)
             # 리스트를 JSON 형식으로 변환하여 저장
-            json_data = json.dumps(restaurant_info_list, ensure_ascii=False)
-            writer.writerow([f"{latitude}, {longitude}", query, json_data])
+            restaurant_json_data = json.dumps(restaurant_info_list, ensure_ascii=False)
+            review_json_data = json.dumps(review_info_list, ensure_ascii=False)
+
+            writer.writerow([f"{latitude}, {longitude}", query, restaurant_json_data, review_json_data])
 
         # get_recommendations_from_csv 함수 호출
         gpt_response = get_recommendations_from_csv(csv_file_path)
@@ -334,24 +328,22 @@ def adong_search(request):
 
     text_data = gpt_response['text']
 
-    pattern = r"음식점 이름:|음식점 카테고리:|음식점 위치:|음식점 메뉴:"
-    replacement = {
-        "음식점 이름:": '"name": "',
-        "음식점 카테고리:": '"category": "',
-        "음식점 위치:": '"address": "',
-        "음식점 메뉴:": '"menu": "'
-    }
+    def convert_string(input_string):
+        new_string = input_string
+        new_string = new_string.replace('"음식점 이름\"', '"name"')
+        new_string = new_string.replace('"음식점 카테고리\"', '"category"')
+        new_string = new_string.replace('"음식점 위치\"', '"address"')
+        new_string = new_string.replace('"음식점 메뉴\"', '"menu"')
+        new_string = new_string.replace('"음식점 리뷰\"', '"review"')
 
-    # 패턴에 맞는 문자열을 대체
-    new_string = re.sub(pattern, lambda x: replacement[x.group(0)], text_data)
+        new_string = new_string.replace("\", \"", ',')
+        # new_string = new_string.replace(',\n   }', '"\n   }')
+        return new_string
 
-    # 불필요한 문자열 대체
-    new_string = new_string.replace('\n   }\n]', '"\n   }\n]')
-    new_string = new_string.replace(",\n    ", '",\n    ').replace(',\n   }', '"\n   }')
+    converted_string = convert_string(text_data)
 
-    # JSON으로 로드
-    data = json.loads(new_string)
-    return Response(data)
+    a = json.loads(converted_string)
+    return Response(a)
 
 # 현재 위치 기준 추천 - 문화
 @api_view(['POST'])
@@ -369,21 +361,8 @@ def noori_send_address(request):
     serialized_stores = find_nearby_stores_by_road_name(road_name)
     # 랜덤으로 5개 뽑아서 전달
     serialized_stores = random.sample(serialized_stores, 5)
-    categories = list({item['category'] for item in serialized_stores})[:4]
-    # JSON 형식으로 변환
-    result = "recommend" + ", ".join(categories)
-    result = result.replace("recommend", '{"recommend": "')
-    result = result + '"}'
 
-    print(result)
-    json_loads = json.loads(result)
-
-    combined_data = {
-        "serialized_stores": serialized_stores,
-        "recommend_keywords": json_loads
-    }
-
-    return Response(combined_data)
+    return Response(serialized_stores)
 
 
 # 검색 - 문화
@@ -473,3 +452,15 @@ def save_search_result(request):
 
         return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
     return Response({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@api_view(['GET', 'POST'])
+def restaurant_review(request, restaurant_pk):
+    restaurant = Restaurant.objects.get(pk=restaurant_pk)
+    if request.method == 'POST':
+        serializer = ReviewSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(restaurant=restaurant, user=1)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
