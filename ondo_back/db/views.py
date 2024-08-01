@@ -211,7 +211,7 @@ def adong_send_address(request):
                 '카테고리': restaurant['category'],
                 '소재지도로명주소': restaurant['address'],
                 '메뉴': restaurant['menu'],
-                '리뷰': restaurant['reviews']
+                '리뷰': restaurant['reviews'][:3]
             }
             restaurant_info_list.append(restaurant_info)
 
@@ -219,7 +219,7 @@ def adong_send_address(request):
         for res in serialized_restaurants:
             result = {
                 '가맹점명': res['name'],
-                '리뷰': res['reviews']
+                '리뷰': res['reviews'][:3]
             }
             review_info_list.append(result)
 
@@ -315,7 +315,7 @@ def adong_search(request):
             for res in serialized_restaurants:
                 result = {
                     '가맹점명': res['name'],
-                    '리뷰': res['reviews']
+                    '리뷰': res['reviews'][:3]
                 }
                 review_info_list.append(result)
             # 리스트를 JSON 형식으로 변환하여 저장
