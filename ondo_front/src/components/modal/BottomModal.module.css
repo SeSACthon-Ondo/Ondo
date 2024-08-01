@@ -157,16 +157,16 @@
 .controller {
   width: 100%;
   display: flex;
-  gap: 5px;
+  gap: 10px;
 }
 .back {
   width: 12px;
   height: 22px;
-  margin-top: 8px;
+  margin-top: 15px;
 }
 .food {
   width: 55px;
-  height: 40px;
+  height: 55px;
   margin-left: 10px;
 }
 .name{}

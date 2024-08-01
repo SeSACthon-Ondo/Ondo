@@ -86,12 +86,12 @@ export const setMarkerHandler = (geocoder, address, map, name, category, handleL
               image: markerImage // 마커이미지 설정
             });
 
-            // 사용자 위치에 마커를 추가
-            // const userRealMarker = new kakao.maps.Marker({
-            //   position: userCoords,
-            //   map: map,
-            //   image: userMarkerImage // 마커이미지 설정
-            // });
+            //사용자 위치에 마커를 추가
+            const userRealMarker = new kakao.maps.Marker({
+              position: userCoords,
+              map: map,
+              image: userMarkerImage // 마커이미지 설정
+            });
 
             const userMarker = new kakao.maps.Marker({
               position: new kakao.maps.LatLng(37.54902570673794, 127.07489169741761),

@@ -1,7 +1,13 @@
+function customSplit(text) {
+    // 정규 표현식 패턴: 숫자와 숫자 사이에 있는 ,를 찾습니다.
+    const pattern = /(?<=\d),(?=\d)/g;
+    // 패턴에 맞는 ,를 기준으로 분리합니다.
+    return text.split(pattern);
+}
+
 const transformGptData = (data) => {
     return data.map((item) => {
-         console.log(`Transforming item at index :`, item); // 데이터 변환 전 출력
-        const menuArray = item.menu.split(',');
+        const menuArray = item.menu.split(', ');
         const menuObject = {};
         menuArray.forEach((menuItem, idx) => {
             menuObject[`메뉴${idx + 1}`] = menuItem.trim();
@@ -16,6 +22,22 @@ const transformGptData = (data) => {
     });
 };
 
+const transformNooriData = (data) => {
+    console.log(data);
+    return data.map((item) => {
+        console.log(`Transforming item:`, item); // 데이터 변환 전 출력
+
+        // menu 필드가 없는 데이터 처리
+        return {
+            name: item.name ? item.name.trim() : null,
+            address: item.address ? item.address.trim() : null,
+            category: item.category ? item.category.trim() : null,
+            menu: {} // menu 필드가 없으므로 빈 객체로 설정
+        };
+    });
+};
+
+
 const transformFavoriteData = (data) => {
     return data[0].recommend.split(',').map((item) => item.trim());
 };
@@ -24,19 +46,6 @@ const transformReviewData = (data) => {
     return data[0].recommend.split(',').map((item) => item.trim());
 };
 
-const transformedNooriData = (data) => {
-    return data.map((item) => {
-        console.log(`Transforming item:`, item); // 데이터 변환 전 출력
-
-        // menu 필드가 없는 데이터 처리
-        return {
-            name: item.name.trim(),
-            address: item.address.trim(),
-            category: item.category.trim(),
-            menu: {} // 빈 객체로 설정하거나 다른 기본 값을 설정할 수 있습니다.
-        };
-    });
-}
 
 
 // 꿈나무 카드
@@ -69,6 +78,7 @@ export const nearFoodHandler = async (address, lat, lon, setDummyData, setDummyA
         }
 
         const data = await response.json();
+        console.log(data);
         console.log(data.gpt_data);
 
         // gpt_data 변환
@@ -79,7 +89,7 @@ export const nearFoodHandler = async (address, lat, lon, setDummyData, setDummyA
         const transformedFavoriteData = transformFavoriteData(data.favorite_data);
         setDummyAI(transformedFavoriteData);
 
-        console.log(data);
+        
         setRefresh(refresh * -1);
     } catch (error) {
         console.error('Error fetching study data:', error);
@@ -134,11 +144,15 @@ export const searchFoodHandler = async (address, lat, lon, text, setDummyData, s
 ///////////////////////////////////////////////////////////////
 //문화누리카드
 //근처
-export const nearCultureHandler = async (address, lat, lon, setDummyData, setDummyAI) => {
+export const nearCultureHandler = async (address, lat, lon, setDummyData, setDummyAI, setRefresh, refresh, setIsLoading) => {
+    // 로딩 시작
+    setIsLoading(true);
+
+    // 전송 데이터
     const req_data = {
         road_name: address,
         latitude: lat,
-        longitude: lon,
+        longitude: lon
     };
     console.log('문화누리 근처');
     console.log(req_data);
@@ -159,22 +173,25 @@ export const nearCultureHandler = async (address, lat, lon, setDummyData, setDum
     throw new Error(`Error! status: ${response.status}`);
     }
     const data = await response.json();
-        console.log(data.gpt_data);
+        console.log(data);
 
         // gpt_data 변환
-        const transformedGptData = transformGptData(data.gpt_data);
+        const transformedGptData = transformNooriData(data);
         setDummyData(transformedGptData);
 
         // favorite_data 변환
-        const transformedFavoriteData = transformFavoriteData(data.favorite_data);
-        setDummyAI(transformedFavoriteData);
+        // const transformedFavoriteData = transformFavoriteData(data.favorite_data);
+        // setDummyAI(transformedFavoriteData);
 
-        console.log(data);
         setRefresh(refresh * -1);
     } catch (error) {
         console.error('Error fetching study data:', error);
+    } finally {
+        // 로딩 종료
+        setIsLoading(false);
     }
-}
+};
+
 //검색
 export const searchCultureHandler = async (address, lat, lon, text, setDummyData, setIsClicked, setRefresh, refresh, setIsLoading) => {
     setIsLoading(true);
@@ -208,7 +225,7 @@ export const searchCultureHandler = async (address, lat, lon, text, setDummyData
     const data = await response.json();
 
     console.log(data);
-    const transformedData = transformedNooriData(data);
+    const transformedData = transformNooriData(data);
     setDummyData(transformedData);
     setIsClicked(false);
     setIsLoading(false);
@@ -216,5 +233,8 @@ export const searchCultureHandler = async (address, lat, lon, text, setDummyData
 
     } catch (error) {
         console.error('Error fetching study data:', error);
+    } finally {
+        // 로딩 종료
+        setIsLoading(false);
     }
 }
