@@ -26,6 +26,7 @@ dist-ssr
 # Environments
 .env
 .venv
+db.sqlite3
 env/
 venv/
 ENV/
