@@ -21,10 +21,10 @@ export const initializeMap = (containerId, lat, lon, setMap, setGeocoder,  setAd
 
   // 지도 중심 변경 이벤트 등록
   kakao.maps.event.addListener(mapInstance, 'center_changed', function () {
-    displayCenterInfo(geocoderInstance, mapInstance.getCenter(), setAddress, setLat, setLon);
+     displayCenterInfo(geocoderInstance, mapInstance.getCenter(), setAddress, setLat, setLon);
   });
 
-  // 초기 중심 주소 정보 표시
+  // // 초기 중심 주소 정보 표시
   displayCenterInfo(geocoderInstance, mapInstance.getCenter(), setAddress, setLat, setLon);
 };
 
