@@ -51,12 +51,20 @@ class SearchResult(models.Model):
 
     def __str__(self):
         return self.food
+<<<<<<< HEAD
 
 
+=======
+    
+>>>>>>> 20abce912422450e9c15eaaf515ea347fdbe90ad
 class Review(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='review')
     user = models.IntegerField()
     content = models.CharField(max_length=300)
+<<<<<<< HEAD
+=======
+    created_at = models.DateTimeField(auto_now_add=True)
+>>>>>>> 20abce912422450e9c15eaaf515ea347fdbe90ad
 
     def __str__(self):
         return self.restaurant
