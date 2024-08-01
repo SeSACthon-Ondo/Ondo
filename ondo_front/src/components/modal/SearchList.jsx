@@ -6,6 +6,7 @@ import japan from '../../assets/일식.png';
 import western from '../../assets/양식.png';
 import conv from '../../assets/편의점.png';
 import elseThing from '../../assets/else.png';
+import heart from '../../assets/heart.png';
 
 const SearchList = (props) => {
   let imgSrc = null;
@@ -27,7 +28,7 @@ const SearchList = (props) => {
       imgSrc = conv;
       break;
     default:
-      imgSrc = elseThing;
+      imgSrc = heart;
   }
 
   return (
@@ -49,7 +50,10 @@ const SearchList = (props) => {
           {Object.keys(props.menu).map(key => (
             <li key={key}>{props.menu[key]}</li>
           ))}
-        </ul></> : <></>}
+        </ul>
+        </> : <></>}
+
+        <h3>리뷰</h3>
       </div>
   );
 }

@@ -5,7 +5,7 @@ const Loading = () => {
     return(
         <div className={style.loading_container}>
             <img src={spinner}/>
-            <p>AI 분석 중...</p>
+            <p>로딩중...</p>
         </div>
     );
 }
