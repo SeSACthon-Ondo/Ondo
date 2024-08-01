@@ -186,7 +186,7 @@ def adong_send_address(request):
     road_name = request.data.get('road_name')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
-    radius_m = 1000  # 반경 200m로 지정
+    radius_m = 777  # 반경 200m로 지정
 
     # 입력 값 유효성 검사
     if not road_name:
@@ -281,7 +281,7 @@ def adong_search(request):
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
     query = request.data.get('query')
-    radius_m = 1000  # 반경 200m로 지정
+    radius_m = 777  # 반경 200m로 지정
 
     # 입력 값 유효성 검사
     if not road_name:
@@ -337,6 +337,7 @@ def adong_search(request):
             os.remove(csv_file_path)
 
     text_data = gpt_response['text']
+    print(text_data)
 
     pattern = r"음식점 이름:|음식점 카테고리:|음식점 위치:|음식점 메뉴:"
     replacement = {
@@ -350,6 +351,7 @@ def adong_search(request):
     new_string = re.sub(pattern, lambda x: replacement[x.group(0)], text_data)
 
     # 불필요한 문자열 대체
+    new_string = new_string.replace('\n   }\n]', '"\n   }\n]')
     new_string = new_string.replace(",\n    ", '",\n    ').replace(',\n   }', '"\n   }')
 
     # JSON으로 로드
@@ -363,7 +365,7 @@ def noori_send_address(request):
     road_name = request.data.get('road_name')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
-    radius_m = 300 # 반경 300m로 지정
+    radius_m = 777 # 반경 300m로 지정
 
     if road_name is None:
         return Response({"error": "도로명이 필요합니다."}, status=400)
@@ -415,59 +417,66 @@ def noori_send_address(request):
 # 검색 - 문화
 @api_view(['POST'])
 def noori_search(request):
-    # 요청에서 검색 쿼리 추출
     road_name = request.data.get('road_name')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
     query = request.data.get('query')
-    radius_m = 300  # 반경 300m로 지정
+    radius_m = 777  # 반경 200m로 지정
 
-    if road_name is None:
+    # 입력 값 유효성 검사
+    if not road_name:
         return Response({"error": "도로명이 필요합니다."}, status=400)
 
     if latitude is None or longitude is None:
         return Response({"error": "위도와 경도가 필요합니다."}, status=400)
 
     if not query:
-        return Response({"error": "검색 쿼리를 제공해야 합니다."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "검색 쿼리를 제공해야 합니다."}, status=400)
+
+    # 검색 기록 저장
+    NooriSearchHistory.objects.create(query=query)  # 검색 쿼리를 데이터베이스에 저장
 
     serialized_stores = find_nearby_stores(latitude, longitude, radius_m)
+    print(serialized_stores)
 
-    # CSV 파일 생성
-    csv_file_path = 'user_data.csv'
-    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerow(['User Location', 'Search', 'Radius', 'Store Candidates'])
+    # 예외 처리: 데이터가 없는 경우
+    if not serialized_stores:
+        return Response(None, status=204)  # 204 No Content로 null 반환
 
-        # 유저 위치 정보, 검색 기록, 반경, 음식점 리스트 추가
-        store_names = [store['name'] for store in serialized_stores]  # 음식점 이름 리스트
-        writer.writerow([f"{latitude}, {longitude}", query, radius_m, store_names])
+    # # CSV 파일 경로 설정
+    csv_file_path = './test.csv'
 
-    # GPT 모듈에 CSV 파일 전달
-    with open(csv_file_path, 'rb') as f:
-        csv_content = ContentFile(f.read())
-        gpt_response = get_gpt_response(user_location=(latitude, longitude), Search=query,
-                                        radius=radius_m, store_candidates=csv_content)
+    try:
+        # CSV 파일 생성 및 열 제목 추가
+        with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(['user_location', 'product_query', 'store_candidates'])
 
+            # 유저 위치 정보와 검색 기록 추가
+            restaurant_info_list = []
+            for restaurant in serialized_stores:
+                # restaurant_info 생성
+                restaurant_info = {
+                    '가맹점명': restaurant['name'],
+                    '카테고리': restaurant['category'],
+                    '소재지도로명주소': restaurant['address'],
+                    '메뉴': restaurant['menu']
+                }
+                restaurant_info_list.append(restaurant_info)
+
+            # 리스트를 JSON 형식으로 변환하여 저장
+            json_data = json.dumps(restaurant_info_list, ensure_ascii=False)
+            writer.writerow([f"{latitude}, {longitude}", query, json_data])
+
+
+
+    finally:
     # 임시 CSV 파일 삭제
-    os.remove(csv_file_path)
+        if os.path.exists(csv_file_path):
+            os.remove(csv_file_path)
 
-    # GPT 모듈의 JSON 응답 처리
-    # 입출력 형태 맞춰야함
-    if isinstance(gpt_response, dict) and 'stores' in gpt_response:
-        # 프론트엔드로 응답할 가맹점 정보
-        response_data = {
-            "gpt_stores": gpt_response['stores']  # GPT에서 받은 가맹점 정보
-        }
-        # 검색 기록 저장
-        NooriSearchHistory.objects.create(query=query)  # 검색 쿼리를 데이터베이스에 저장
-    else:
-        response_data = {
-            "gpt_stores": [],  # GPT 응답이 없을 경우 빈 리스트
-            "message": "유효한 가맹점 정보가 없습니다."
-        }
 
-    return Response(response_data)
+    return Response(data)
 
 
 @api_view(['POST'])
