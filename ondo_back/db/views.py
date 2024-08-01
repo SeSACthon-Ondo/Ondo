@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 import requests
 from django.http import JsonResponse
+import random
 
 from .gpt_service_adong_search import get_recommendations_from_csv
 from .gpt_service_adong_address import get_recommendations_from_history
@@ -358,7 +359,6 @@ def noori_send_address(request):
     road_name = request.data.get('road_name')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
-    radius_m = 777 # 반경 300m로 지정
 
     if road_name is None:
         return Response({"error": "도로명이 필요합니다."}, status=400)
@@ -366,45 +366,11 @@ def noori_send_address(request):
     if latitude is None or longitude is None:
         return Response({"error": "위도와 경도가 필요합니다."}, status=400)
 
-    serialized_stores = find_nearby_stores(latitude, longitude, radius_m)
+    serialized_stores = find_nearby_stores_by_road_name(road_name)
+    # 랜덤으로 5개 뽑아서 전달
+    serialized_stores = random.sample(serialized_stores, 5)
 
-    # 검색 기록을 데이터베이스에서 가져오기
-    search_records = AdongSearchHistory.objects.all().order_by('-timestamp')[:10]  # 최근 10개 검색 기록
-    search_history = [record.query for record in search_records]
-
-    # CSV 파일 생성
-    csv_file_path = 'user_data.csv'
-    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerow(['User Location', 'Search History', 'Radius', 'Store Candidates'])
-
-        # 유저 위치 정보, 검색 기록, 반경, 음식점 리스트 추가
-        store_names = [store['name'] for store in serialized_stores]  # 음식점 이름 리스트
-        writer.writerow([f"{latitude}, {longitude}", search_history, radius_m, store_names])
-
-    # GPT 모듈에 CSV 파일 전달
-    with open(csv_file_path, 'rb') as f:
-        csv_content = ContentFile(f.read())
-        gpt_response = get_gpt_response(user_location=(latitude, longitude), search_history=search_history,
-                                        radius=radius_m, store_candidates=csv_content)
-
-    # 임시 CSV 파일 삭제
-    os.remove(csv_file_path)
-
-    # GPT 모듈의 JSON 응답 처리
-    # 입출력 형태 맞춰야함
-    if isinstance(gpt_response, dict) and 'stores' in gpt_response:
-        # 프론트엔드로 응답할 가맹점 정보
-        response_data = {
-            "gpt_stores": gpt_response['stores']  # GPT에서 받은 가맹점 정보
-        }
-    else:
-        response_data = {
-            "gpt_stores": [],  # GPT 응답이 없을 경우 빈 리스트
-            "message": "유효한 가맹점 정보가 없습니다."
-        }
-
-    return Response(response_data)
+    return Response(serialized_stores)
 
 
 # 검색 - 문화
