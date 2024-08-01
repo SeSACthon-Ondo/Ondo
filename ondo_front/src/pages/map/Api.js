@@ -1,6 +1,7 @@
-const transformData = (data) => {
+const transformGptData = (data) => {
     return data.map((item) => {
-        const menuArray = item.menu.split(';');
+         console.log(`Transforming item at index :`, item); // 데이터 변환 전 출력
+        const menuArray = item.menu.split(',');
         const menuObject = {};
         menuArray.forEach((menuItem, idx) => {
             menuObject[`메뉴${idx + 1}`] = menuItem.trim();
@@ -15,13 +16,22 @@ const transformData = (data) => {
     });
 };
 
+const transformFavoriteData = (data) => {
+    return data[0].recommend.split(',').map((item) => item.trim());
+};
+
+const transformReviewData = (data) => {
+    return data[0].recommend.split(',').map((item) => item.trim());
+};
+
+
 // 꿈나무 카드
 // 근처
 export const nearFoodHandler = async (address, lat, lon, setDummyData, setDummyAI, setRefresh, refresh, setIsLoading) => {
-    //로딩 시작
+    // 로딩 시작
     setIsLoading(true);
 
-    //전송 데이터
+    // 전송 데이터
     const req_data = {
         road_name: address,
         latitude: lat,
@@ -32,30 +42,36 @@ export const nearFoodHandler = async (address, lat, lon, setDummyData, setDummyA
     console.log(req_data);
 
     try {
-        const response = await fetch(
-        'http://127.0.0.1:8000/db/adong/send_address/',
-        {
+        const response = await fetch('http://127.0.0.1:8000/db/adong/send_address/', {
             method: 'POST',
             body: JSON.stringify(req_data),
             headers: {
-            'Content-Type': 'application/json'
+                'Content-Type': 'application/json'
             },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error! status: ${response.status}`);
         }
-        );
 
-    if (!response.ok) {
-    throw new Error(`Error! status: ${response.status}`);
-    }
+        const data = await response.json();
+        console.log(data.gpt_data);
 
-    const data = await response.json();
-    const transformedData = transformData(data);
-    setDummyData(transformedData);
-    setIsLoading(false);
-    console.log(data);
-    setRefresh(refresh * -1);
+        // gpt_data 변환
+        const transformedGptData = transformGptData(data.gpt_data);
+        setDummyData(transformedGptData);
 
+        // favorite_data 변환
+        const transformedFavoriteData = transformFavoriteData(data.favorite_data);
+        setDummyAI(transformedFavoriteData);
+
+        console.log(data);
+        setRefresh(refresh * -1);
     } catch (error) {
         console.error('Error fetching study data:', error);
+    } finally {
+        // 로딩 종료
+        setIsLoading(false);
     }
 };
 
@@ -91,7 +107,7 @@ export const searchFoodHandler = async (address, lat, lon, text, setDummyData, s
         const data = await response.json();
 
         console.log(data);
-        const transformedData = transformData(data);
+        const transformedData = transformGptData(data);
         setDummyData(transformedData);
         setIsClicked(false);
         setIsLoading(false);
@@ -129,7 +145,18 @@ export const nearCultureHandler = async (address, lat, lon, setDummyData, setDum
     throw new Error(`Error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log(data);
+        console.log(data.gpt_data);
+
+        // gpt_data 변환
+        const transformedGptData = transformGptData(data.gpt_data);
+        setDummyData(transformedGptData);
+
+        // favorite_data 변환
+        const transformedFavoriteData = transformFavoriteData(data.favorite_data);
+        setDummyAI(transformedFavoriteData);
+
+        console.log(data);
+        setRefresh(refresh * -1);
     } catch (error) {
         console.error('Error fetching study data:', error);
     }
@@ -165,8 +192,9 @@ export const searchCultureHandler = async (address, lat, lon, text, setDummyData
     }
 
     const data = await response.json();
+
     console.log(data);
-    const transformedData = transformData(data);
+    const transformedData = transformGptData(data);
     setDummyData(transformedData);
     setIsClicked(false);
     setIsLoading(false);
