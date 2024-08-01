@@ -152,7 +152,9 @@ export default function Map() {
   // 모달 리스트 클릭 시
   const handleListItemClick = (marker) => {
     setSelectedMarker(marker);
-    map.setCenter(marker.getPosition()); // 마커의 좌표로 지도의 중심 설정
+    if (marker.getPosition()) {
+      map.setCenter(marker.getPosition()); // 마커의 좌표로 지도의 중심 설정
+    }
   };
 
   // 카드 종류에 따른 렌더링
