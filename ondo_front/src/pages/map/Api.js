@@ -12,6 +12,7 @@ const transformGptData = (data) => {
             address: item.address.trim(),
             category: item.category.trim(),
             menu: menuObject,
+            review: item.review ? item.review.split(',').map(review => review.trim()) : [] // review 필드를 배열로 변환
         };
     });
 };
@@ -22,15 +23,17 @@ const transformNooriData = (data) => {
     return data.map((item) => {
         console.log(`Transforming item:`, item); // 데이터 변환 전 출력
 
-        // menu 필드가 없는 데이터 처리
+        // menu 필드가 없는 데이터 처리 및 review 필드 추가
         return {
             name: item.name ? item.name.trim() : null,
             address: item.address ? item.address.trim() : null,
             category: item.category ? item.category.trim() : null,
-            menu: {} // menu 필드가 없으므로 빈 객체로 설정
+            menu: {}, // menu 필드가 없으므로 빈 객체로 설정
+            review: item.review ? item.review.split(',').map(review => review.trim()) : [] // review 필드를 배열로 변환
         };
     });
 };
+
 
 // AI키워드 데이터 정리- 문화누리
 const transformFavoriteFoodData = (data) => {
@@ -44,9 +47,9 @@ const transformFavoriteCultureData = (data) => {
 };
 
 // 리뷰 데이터 정리
-const transformReviewData = (data) => {
-    return data[0].recommend.split(',').map((item) => item.trim());
-};
+// const transformReviewData = (data) => {
+//     return data[0].recommend.split(',').map((item) => item.trim());
+// };
 
 
 

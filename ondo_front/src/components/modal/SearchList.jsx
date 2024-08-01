@@ -68,7 +68,7 @@ const SearchList = (props) => {
 
         <h3>리뷰</h3>
         <div className={style.comment_wrapper}>
-        {props.comment.map((text, index) => (
+        {props.review.map((text, index) => (
                 <p key={index} className={style.comment_text}>{text}</p>
             ))}
           </div>
