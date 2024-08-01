@@ -9,7 +9,6 @@ import elseThing from '../../assets/else.png';
 
 const SearchList = (props) => {
   let imgSrc = null;
-  console.log(props.category)
 
   switch(props.category) {
     case '한식':

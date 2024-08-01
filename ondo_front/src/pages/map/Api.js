@@ -19,7 +19,7 @@ const transformData = (data) => {
 // 근처
 export const nearFoodHandler = async (address, lat, lon, setDummyData, setDummyAI, setRefresh, refresh, setIsLoading) => {
     //로딩 시작
-    //setIsLoading(true);
+    setIsLoading(true);
 
     //전송 데이터
     const req_data = {
@@ -48,8 +48,10 @@ export const nearFoodHandler = async (address, lat, lon, setDummyData, setDummyA
     }
 
     const data = await response.json();
-    console.log(data);
+    const transformedData = transformData(data);
+    setDummyData(transformedData);
     setIsLoading(false);
+    console.log(data);
     setRefresh(refresh * -1);
 
     } catch (error) {
