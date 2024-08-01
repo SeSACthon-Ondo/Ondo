@@ -13,8 +13,8 @@ from .gpt_service_adong_address import get_recommendations_from_history
 from .nutrient_recommend import get_nutrient_recommend
 from .gpt_service_noori_search import get_noori_from_csv
 from .favorite_recommend import get_favorite_recommend
-from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory, SearchResult
-from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer
+from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory, SearchResult, Review
+from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer, ReviewSerializer
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -494,3 +494,12 @@ def save_search_result(request):
 
         return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
     return Response({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+@api_view(['GET', 'POST'])
+def restaurant_review(request, restaurant_pk):
+    restaurant = Restaurant.objects.get(pk=restaurant_pk)
+    if request.method == 'POST':
+        serializer = ReviewSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(restaurant=restaurant, user=1)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
