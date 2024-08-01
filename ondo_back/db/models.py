@@ -51,3 +51,12 @@ class SearchResult(models.Model):
 
     def __str__(self):
         return self.food
+
+
+class Review(models.Model):
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='review')
+    user = models.IntegerField()
+    content = models.CharField(max_length=300)
+
+    def __str__(self):
+        return self.restaurant
