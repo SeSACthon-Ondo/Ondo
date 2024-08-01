@@ -24,6 +24,20 @@ const transformReviewData = (data) => {
     return data[0].recommend.split(',').map((item) => item.trim());
 };
 
+const transformedNooriData = (data) => {
+    return data.map((item) => {
+        console.log(`Transforming item:`, item); // 데이터 변환 전 출력
+
+        // menu 필드가 없는 데이터 처리
+        return {
+            name: item.name.trim(),
+            address: item.address.trim(),
+            category: item.category.trim(),
+            menu: {} // 빈 객체로 설정하거나 다른 기본 값을 설정할 수 있습니다.
+        };
+    });
+}
+
 
 // 꿈나무 카드
 // 근처
@@ -194,7 +208,7 @@ export const searchCultureHandler = async (address, lat, lon, text, setDummyData
     const data = await response.json();
 
     console.log(data);
-    const transformedData = transformGptData(data);
+    const transformedData = transformedNooriData(data);
     setDummyData(transformedData);
     setIsClicked(false);
     setIsLoading(false);
