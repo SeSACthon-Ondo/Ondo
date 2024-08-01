@@ -1,10 +1,4 @@
-function customSplit(text) {
-    // 정규 표현식 패턴: 숫자와 숫자 사이에 있는 ,를 찾습니다.
-    const pattern = /(?<=\d),(?=\d)/g;
-    // 패턴에 맞는 ,를 기준으로 분리합니다.
-    return text.split(pattern);
-}
-
+// 꿈나무 카드 데이터 정리(주변 가게)
 const transformGptData = (data) => {
     return data.map((item) => {
         const menuArray = item.menu.split(', ');
@@ -22,6 +16,7 @@ const transformGptData = (data) => {
     });
 };
 
+// 문화누리 카드 데이터 정리(주변 가게)
 const transformNooriData = (data) => {
     console.log(data);
     return data.map((item) => {
@@ -37,11 +32,18 @@ const transformNooriData = (data) => {
     });
 };
 
-
-const transformFavoriteData = (data) => {
-    return data[0].recommend.split(',').map((item) => item.trim());
+// AI키워드 데이터 정리- 문화누리
+const transformFavoriteFoodData = (data) => {
+    console.log(data)
+    return data[0].recommend.split(', ').map((item) => item.trim());
+};
+// AI키워드 데이터 정리- 문화누리
+const transformFavoriteCultureData = (data) => {
+    console.log(data)
+    return data.recommend.split(', ').map((item) => item.trim());
 };
 
+// 리뷰 데이터 정리
 const transformReviewData = (data) => {
     return data[0].recommend.split(',').map((item) => item.trim());
 };
@@ -86,7 +88,7 @@ export const nearFoodHandler = async (address, lat, lon, setDummyData, setDummyA
         setDummyData(transformedGptData);
 
         // favorite_data 변환
-        const transformedFavoriteData = transformFavoriteData(data.favorite_data);
+        const transformedFavoriteData = transformFavoriteFoodData(data.favorite_data);
         setDummyAI(transformedFavoriteData);
 
         
@@ -176,12 +178,12 @@ export const nearCultureHandler = async (address, lat, lon, setDummyData, setDum
         console.log(data);
 
         // gpt_data 변환
-        const transformedGptData = transformNooriData(data);
+        const transformedGptData = transformNooriData(data.serialized_stores);
         setDummyData(transformedGptData);
 
         // favorite_data 변환
-        // const transformedFavoriteData = transformFavoriteData(data.favorite_data);
-        // setDummyAI(transformedFavoriteData);
+        const transformedFavoriteData = transformFavoriteCultureData(data.recommend_keywords);
+        setDummyAI(transformedFavoriteData);
 
         setRefresh(refresh * -1);
     } catch (error) {

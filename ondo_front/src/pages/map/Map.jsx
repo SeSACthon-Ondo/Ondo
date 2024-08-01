@@ -66,6 +66,7 @@ export default function Map() {
   const debouncedLat = useDebounce(lat, 500);
   const debouncedLon = useDebounce(lon, 500);
   const [initialized, setInitialized] = useState(false); // 초기화 상태 추가
+  const [comment, setComment] = useState(['저한테는 양이 많아요', '그냥저냥이었어요', '진짜 맛있음!!']);
 
   
   //검색
@@ -179,9 +180,6 @@ export default function Map() {
       setInitialized(true); // 첫 실행 후 초기화 상태 설정
     }
   }, [debouncedAddress, debouncedLat, debouncedLon, type, initialized]);
-  
-  
-  //debouncedAddress, debouncedLat, debouncedLon
 
   const searchHandler = () => {
     if(type === '꿈나무') {
@@ -202,6 +200,8 @@ export default function Map() {
           category= {selectedMarker.category}
           menu= {selectedMarker.menu}
           address = {selectedMarker.address}
+          comment = {comment}
+          setComment={setComment}
           refresh= {handleRefresh}
           map= {map}
           type= {type}
@@ -213,6 +213,8 @@ export default function Map() {
         <Near
           list={dummyData}
           markers={markers}
+          comment = {comment}
+          setComment={setComment}
           onListItemClick={(marker) => handleListItemClick(marker, map)}
         />
       );

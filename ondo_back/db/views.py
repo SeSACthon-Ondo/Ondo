@@ -369,8 +369,21 @@ def noori_send_address(request):
     serialized_stores = find_nearby_stores_by_road_name(road_name)
     # 랜덤으로 5개 뽑아서 전달
     serialized_stores = random.sample(serialized_stores, 5)
+    categories = list({item['category'] for item in serialized_stores})[:4]
+    # JSON 형식으로 변환
+    result = "recommend" + ", ".join(categories)
+    result = result.replace("recommend", '{"recommend": "')
+    result = result + '"}'
 
-    return Response(serialized_stores)
+    print(result)
+    json_loads = json.loads(result)
+
+    combined_data = {
+        "serialized_stores": serialized_stores,
+        "recommend_keywords": json_loads
+    }
+
+    return Response(combined_data)
 
 
 # 검색 - 문화

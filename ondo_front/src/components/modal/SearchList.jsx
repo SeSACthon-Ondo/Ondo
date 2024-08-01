@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import style from './BottomModal.module.css';
 import back from '../../assets/back_black.png'
 import korea from '../../assets/한식.png';
@@ -5,10 +7,10 @@ import china from '../../assets/중식.png';
 import japan from '../../assets/일식.png';
 import western from '../../assets/양식.png';
 import conv from '../../assets/편의점.png';
-import elseThing from '../../assets/else.png';
 import heart from '../../assets/heart.png';
 
 const SearchList = (props) => {
+  const [newComment, setNewComment] = useState('');
   let imgSrc = null;
 
   switch(props.category) {
@@ -30,6 +32,17 @@ const SearchList = (props) => {
     default:
       imgSrc = heart;
   }
+
+  const handleInputChange = (event) => {
+    setNewComment(event.target.value);
+  };
+
+  const handleAddComment = () => {
+    if (newComment.trim()) {
+        props.setComment([...props.comment, newComment]);
+        setNewComment('');
+    }
+  };
 
   return (
       <div className={style.result_container}>
@@ -54,6 +67,16 @@ const SearchList = (props) => {
         </> : <></>}
 
         <h3>리뷰</h3>
+        <div className={style.comment_wrapper}>
+        {props.comment.map((text, index) => (
+                <p key={index} className={style.comment_text}>{text}</p>
+            ))}
+          </div>
+        <div className={style.comment_box}>
+          <input type='text' value={newComment} onChange={handleInputChange}/> 
+          <button onClick={handleAddComment}>등록</button>
+        </div>
+        
       </div>
   );
 }
