@@ -147,3 +147,36 @@
     font-size: 14px;
     border-radius: 50px;
 }
+
+.text_wrapper{
+    width: 90%;
+    margin: auto;
+}
+.hr {
+    width: 100%;
+    height: 0.1px;
+    border: 1px solid #D9D9D9;
+}
+.text_wrapper h1{
+    margin: 55px 0 15px 0;
+    font-size: 25px;
+}
+.text_wrapper h2{
+    margin: 25px 0 15px 0;
+    font-size: 20px;
+}
+.text_wrapper p{
+    font-size: 17px;
+}
+.text_wrapper a{
+    margin-top: 50px;
+    display: inline-block;
+    width: 100%;
+    line-height: 50px;
+    background-color: #FFC7C7;
+    border-radius: 30px;
+    color: #FFFFFF;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 700;
+}
