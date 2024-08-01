@@ -9,6 +9,8 @@ from django.http import JsonResponse
 
 from .gpt_service_adong_search import get_recommendations_from_csv
 from .gpt_service_adong_address import get_recommendations_from_history
+from .nutrient_recommend import get_nutrient_recommend
+from .favorite_recommend import get_favorite_recommend
 from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory, SearchResult
 from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer
 import matplotlib
@@ -184,7 +186,7 @@ def adong_send_address(request):
     road_name = request.data.get('road_name')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
-    radius_m = 200  # 반경 200m로 지정
+    radius_m = 1000  # 반경 200m로 지정
 
     # 입력 값 유효성 검사
     if not road_name:
@@ -229,31 +231,47 @@ def adong_send_address(request):
 
         # get_recommendations_from_csv 함수 호출
         gpt_response = get_recommendations_from_history(csv_file_path)
+        # nutrient_recommend = get_nutrient_recommend(csv_file_path)
+        favorite_recommend = get_favorite_recommend(csv_file_path)
 
     finally:
         # 임시 CSV 파일 삭제
         if os.path.exists(csv_file_path):
             os.remove(csv_file_path)
 
-    text_data = gpt_response['text']
+    gpt_data = gpt_response['text']
 
-    pattern = r"음식점 이름:|음식점 카테고리:|음식점 위치:|음식점 메뉴:|추천 이유 :"
-    replacement = {
-        "음식점 이름:": '"name": "',
-        "음식점 카테고리:": '"category": "',
-        "음식점 위치:": '"address": "',
-        "음식점 메뉴:": '"menu": "'
+    def convert_string(input_string):
+        new_string = input_string
+        new_string = new_string.replace("음식점 이름:", '"name": "')
+        new_string = new_string.replace("음식점 카테고리:", '"category": "')
+        new_string = new_string.replace("음식점 위치:", '"address": "')
+        new_string = new_string.replace("음식점 메뉴:", '"menu": "')
+        new_string = new_string.replace(",\n    ", '",\n    ')
+        new_string = new_string.replace(',\n   }', '"\n   }')
+        return new_string
+
+    gpt_data = convert_string(gpt_data)
+
+    # ai 추천 기능
+    favorite_data = favorite_recommend['text']
+
+    def convert_recommend(input_string):
+        new_string = input_string
+        new_string = new_string.replace("[\n   {\n      추천 메뉴 :", '[\n   {\n      "recommend": "')
+        new_string = new_string.replace("\n   },\n   {\n      추천 메뉴 :", ',')
+        new_string = new_string.replace("\n   }\n]", '"\n   }\n]')
+        return new_string
+
+    favorite_data = convert_recommend(favorite_data)
+
+    gpt_data = json.loads(gpt_data)
+    favorite_data = json.loads(favorite_data)
+    combined_data = {
+        "gpt_data": gpt_data,
+        "favorite_data": favorite_data
     }
-
-    # 패턴에 맞는 문자열을 대체
-    new_string = re.sub(pattern, lambda x: replacement[x.group(0)], text_data)
-
-    # 불필요한 문자열 대체
-    new_string = new_string.replace(",\n    ", '",\n    ').replace(',\n   }', '"\n   }')
-
-    # JSON으로 로드
-    data = json.loads(new_string)
-    return Response(data)
+    return Response(combined_data)
 
 # 검색 - 아동
 @api_view(['POST'])
@@ -263,7 +281,7 @@ def adong_search(request):
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
     query = request.data.get('query')
-    radius_m = 200  # 반경 200m로 지정
+    radius_m = 1000  # 반경 200m로 지정
 
     # 입력 값 유효성 검사
     if not road_name:
