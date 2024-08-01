@@ -1,5 +1,6 @@
 import math
 
+from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, get_list_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -10,6 +11,7 @@ from django.http import JsonResponse
 from .gpt_service_adong_search import get_recommendations_from_csv
 from .gpt_service_adong_address import get_recommendations_from_history
 from .nutrient_recommend import get_nutrient_recommend
+from .gpt_service_noori_search import get_noori_from_csv
 from .favorite_recommend import get_favorite_recommend
 from .models import Restaurant, NooriOfflineStore, NooriOnlineStore, AdongSearchHistory, NooriSearchHistory, SearchResult
 from .serializers import RestaurantSerializer, NooriOnlineInfosSerializer, NooriOfflineInfosSerializer
@@ -49,7 +51,7 @@ def save_adong_infos(request):
                     if ':' in item:
                         name, price = item.split(':', 1)
                         menu_dict[name.strip()] = price.strip()
-                
+
                 # JSON 데이터 저장 시 ensure_ascii=False 옵션 사용
                 menu_json = json.dumps(menu_dict, ensure_ascii=False)
                 Restaurant.objects.create(
@@ -147,38 +149,31 @@ def find_nearby_restaurants(latitude, longitude, radius_m):
     serialized_restaurants = serializer.data  # 직렬화된 데이터
 
     return serialized_restaurants  # 가맹점 리스트 반환
-# 주변 문화 센터 가져오기
-def find_nearby_stores(latitude, longitude, radius_m):
 
-    latitude_delta, longitude_delta = calculate_latitude_longitude_delta(radius_m, latitude)
+def extract_district(road_name):
+    # 도로명 주소에서 구/군 정보를 정규 표현식으로 추출
+    match = re.search(r'(.+구|.+군)', road_name)
+    if match:
+        return match.group(0)
+    return None
 
-    # 1차 필터링: 위도, 경도 기준으로 반경 내 온라인 및 오프라인 가맹점 검색
-    nearby_online_stores = NooriOnlineStore.objects.filter(
-        latitude__gte=latitude - latitude_delta,
-        latitude__lte=latitude + latitude_delta,
-        longitude__gte=longitude - longitude_delta,
-        longitude__lte=longitude + longitude_delta
-    )
+def find_nearby_stores_by_road_name(road_name):
+    # 도로명 주소에서 구/군 정보 추출
+    district = extract_district(road_name)
 
-    nearby_offline_stores = NooriOfflineStore.objects.filter(
-        latitude__gte=latitude - latitude_delta,
-        latitude__lte=latitude + latitude_delta,
-        longitude__gte=longitude - longitude_delta,
-        longitude__lte=longitude + longitude_delta
+    if not district:
+        return []  # 구/군 정보가 없으면 빈 리스트 반환
+
+    # 2차 필터링: 도로명 주소의 구/군 기준으로 가맹점 검색
+    nearby_stores = NooriOfflineStore.objects.filter(
+        Q(address__icontains=district)  # 주소에 구/군 정보가 포함된 가맹점 검색
     )
 
     # 직렬화 과정: 모든 가맹점 반환
-    online_serializer = RestaurantSerializer(nearby_online_stores, many=True)
-    offline_serializer = RestaurantSerializer(nearby_offline_stores, many=True)
+    serializer = NooriOfflineInfosSerializer(nearby_stores, many=True)
+    serialized_stores = serializer.data  # 직렬화된 데이터
 
-    serialized_online_stores = online_serializer.data  # 직렬화된 온라인 가맹점 데이터
-    serialized_offline_stores = offline_serializer.data  # 직렬화된 오프라인 가맹점 데이터
-
-    # 두 가지 가맹점 리스트를 합쳐서 반환
-    return {
-        "online_stores": serialized_online_stores,
-        "offline_stores": serialized_offline_stores
-    }
+    return serialized_stores  # 가맹점 리스트 반환
 
 # 현재 위치 기준 추천 - 아동
 @api_view(['POST'])
@@ -337,7 +332,6 @@ def adong_search(request):
             os.remove(csv_file_path)
 
     text_data = gpt_response['text']
-    print(text_data)
 
     pattern = r"음식점 이름:|음식점 카테고리:|음식점 위치:|음식점 메뉴:"
     replacement = {
@@ -357,7 +351,6 @@ def adong_search(request):
     # JSON으로 로드
     data = json.loads(new_string)
     return Response(data)
-
 
 # 현재 위치 기준 추천 - 문화
 @api_view(['POST'])
@@ -421,7 +414,6 @@ def noori_search(request):
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
     query = request.data.get('query')
-    radius_m = 777  # 반경 200m로 지정
 
     # 입력 값 유효성 검사
     if not road_name:
@@ -436,13 +428,11 @@ def noori_search(request):
     # 검색 기록 저장
     NooriSearchHistory.objects.create(query=query)  # 검색 쿼리를 데이터베이스에 저장
 
-    serialized_stores = find_nearby_stores(latitude, longitude, radius_m)
-    print(serialized_stores)
+    serialized_stores = find_nearby_stores_by_road_name(road_name)
 
     # 예외 처리: 데이터가 없는 경우
     if not serialized_stores:
         return Response(None, status=204)  # 204 No Content로 null 반환
-
     # # CSV 파일 경로 설정
     csv_file_path = './test.csv'
 
@@ -453,30 +443,43 @@ def noori_search(request):
             writer.writerow(['user_location', 'product_query', 'store_candidates'])
 
             # 유저 위치 정보와 검색 기록 추가
-            restaurant_info_list = []
-            for restaurant in serialized_stores:
+            store_info_list = []
+            for store in serialized_stores:
                 # restaurant_info 생성
-                restaurant_info = {
-                    '가맹점명': restaurant['name'],
-                    '카테고리': restaurant['category'],
-                    '소재지도로명주소': restaurant['address'],
-                    '메뉴': restaurant['menu']
+                store_info = {
+                    '가맹점명': store['name'],
+                    '카테고리': store['category'],
+                    '소재지도로명주소': store['address']
                 }
-                restaurant_info_list.append(restaurant_info)
+                store_info_list.append(store_info)
 
             # 리스트를 JSON 형식으로 변환하여 저장
-            json_data = json.dumps(restaurant_info_list, ensure_ascii=False)
+            json_data = json.dumps(store_info_list, ensure_ascii=False)
             writer.writerow([f"{latitude}, {longitude}", query, json_data])
 
-
+        noori_from_csv = get_noori_from_csv(csv_file_path)
 
     finally:
-    # 임시 CSV 파일 삭제
+        # 임시 CSV 파일 삭제
         if os.path.exists(csv_file_path):
             os.remove(csv_file_path)
 
+    text_data = noori_from_csv['text']
 
-    return Response(data)
+    def convert_noori_string(input_string):
+        new_string = input_string
+        new_string = new_string.replace("가맹점 이름:", '"name": "')
+        new_string = new_string.replace("가맹점 카테고리:", '"category": "')
+        new_string = new_string.replace("가맹점 위치:", '"address": "')
+
+        new_string = new_string.replace(",\n    ", '",\n    ')
+        new_string = new_string.replace(',\n   }', '"\n   }')
+        return new_string
+
+    converted_string = convert_noori_string(text_data)
+    converted_string = json.loads(converted_string)
+
+    return Response(converted_string)
 
 
 @api_view(['POST'])
@@ -485,9 +488,9 @@ def save_search_result(request):
         food = request.data.get('food')
         if not food:
             return Response({'error': 'Food field is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         search_result = SearchResult(food=food)
         search_result.save()
-        
+
         return Response({'message': 'Data saved successfully'}, status=status.HTTP_201_CREATED)
     return Response({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
