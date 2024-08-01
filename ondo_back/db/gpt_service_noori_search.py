@@ -51,7 +51,7 @@ product_prompt = """
 prompt = PromptTemplate.from_template(template=product_prompt)
 chain = LLMChain(prompt=prompt, llm=llm)
 
-def get_recommendations_from_csv(csv_file_path):
+def get_noori_from_csv(csv_file_path):
     # CSV 파일 읽기
     df = pd.read_csv(csv_file_path)
 
