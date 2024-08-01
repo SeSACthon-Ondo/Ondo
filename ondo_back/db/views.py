@@ -233,43 +233,45 @@ def adong_send_address(request):
         gpt_response = get_recommendations_from_history(csv_file_path)
         # nutrient_recommend = get_nutrient_recommend(csv_file_path)
         favorite_recommend = get_favorite_recommend(csv_file_path)
-        # print(nutrient_recommend['text'])
 
     finally:
         # 임시 CSV 파일 삭제
         if os.path.exists(csv_file_path):
             os.remove(csv_file_path)
 
-    text_data = gpt_response['text']
+    gpt_data = gpt_response['text']
 
-    pattern = r"음식점 이름:|음식점 카테고리:|음식점 위치:|음식점 메뉴:"
-    replacement = {
-        "음식점 이름:": '"name": "',
-        "음식점 카테고리:": '"category": "',
-        "음식점 위치:": '"address": "',
-        "음식점 메뉴:": '"menu": "'
-    }
+    def convert_string(input_string):
+        new_string = input_string
+        new_string = new_string.replace("음식점 이름:", '"name": "')
+        new_string = new_string.replace("음식점 카테고리:", '"category": "')
+        new_string = new_string.replace("음식점 위치:", '"address": "')
+        new_string = new_string.replace("음식점 메뉴:", '"menu": "')
+        new_string = new_string.replace(",\n    ", '",\n    ')
+        new_string = new_string.replace(',\n   }', '"\n   }')
+        return new_string
 
-    # 패턴에 맞는 문자열을 대체
-    new_string = re.sub(pattern, lambda x: replacement[x.group(0)], text_data)
+    gpt_data = convert_string(gpt_data)
 
-    # 불필요한 문자열 대체
-    new_string = new_string.replace(",\n    ", '",\n    ').replace(',\n   }', '"\n   }')
-
-    # JSON으로 로드
-    gpt_data = json.loads(new_string)
-    print(gpt_data)
+    # ai 추천 기능
     favorite_data = favorite_recommend['text']
-    def transform_recommendations(input_string):
-        menu_items = re.findall(r'추천 메뉴\s*:\s*([^,\n]+)', input_string)
-        recommendations = ', '.join(menu_items)
-        result = {"recommend": recommendations}
-        return json.dumps(result, ensure_ascii=False)
 
-    favorite_result = transform_recommendations(favorite_data)
-    combined_result = {gpt_data, favorite_result}
+    def convert_recommend(input_string):
+        new_string = input_string
+        new_string = new_string.replace("[\n   {\n      추천 메뉴 :", '[\n   {\n      "recommend": "')
+        new_string = new_string.replace("\n   },\n   {\n      추천 메뉴 :", ',')
+        new_string = new_string.replace("\n   }\n]", '"\n   }\n]')
+        return new_string
 
-    return Response(combined_result)
+    favorite_data = convert_recommend(favorite_data)
+
+    gpt_data = json.loads(gpt_data)
+    favorite_data = json.loads(favorite_data)
+    combined_data = {
+        "gpt_data": gpt_data,
+        "favorite_data": favorite_data
+    }
+    return Response(combined_data)
 
 # 검색 - 아동
 @api_view(['POST'])
