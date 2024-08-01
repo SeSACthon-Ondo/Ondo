@@ -165,7 +165,7 @@ export default function Map() {
   }
 
   useEffect(() => {
-    if (debouncedAddress !== '알 수 없음' && !initialized || refresh !== 1) {
+    if (!initialized && debouncedAddress !== '알 수 없음') {
       console.log(debouncedAddress);
       console.log(debouncedLat, debouncedLon);
   
@@ -176,7 +176,8 @@ export default function Map() {
       }
       setInitialized(true); // 첫 실행 후 초기화 상태 설정
     }
-  }, [debouncedAddress, debouncedLat, debouncedLon, initialized, type, refresh]);
+  }, [debouncedAddress, debouncedLat, debouncedLon, type, initialized]);
+  
   
   //debouncedAddress, debouncedLat, debouncedLon
 
