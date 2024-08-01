@@ -556,4 +556,4 @@ test/
 
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,django,jupyternotebooks,pycharm,vue,node
 .DS_Sotre
-.sqlite3
+db.sqlite3
