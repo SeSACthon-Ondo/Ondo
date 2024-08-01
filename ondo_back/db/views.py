@@ -231,7 +231,6 @@ def adong_send_address(request):
     gpt_response = get_recommendations_from_history(csv_file_path)
     favorite_recommend = get_favorite_recommend(csv_file_path)
 
-    print(gpt_response['text'])
     def convert_string(input_string):
         new_string = input_string
         new_string = new_string.replace("음식점 이름: ", '"name": "')
@@ -246,12 +245,19 @@ def adong_send_address(request):
         return new_string
 
     converted_string = convert_string(gpt_response['text'])
-    print(converted_string)
+    favorite_data = convert_recommend(favorite_recommend['text'])
 
+    gpt_data = json.loads(converted_string)
+    favorite_data = json.loads(favorite_data)
+    combined_data = {
+        "gpt_data": gpt_data,
+        "favorite_data": favorite_data
+    }
 
-    a = json.loads(converted_string)
+    if os.path.exists(csv_file_path):
+        os.remove(csv_file_path)
 
-    return Response(a)
+    return Response(combined_data)
 
 # 검색 - 아동
 @api_view(['POST'])
@@ -337,7 +343,6 @@ def adong_search(request):
         new_string = new_string.replace('"음식점 리뷰\"', '"review"')
 
         new_string = new_string.replace("\", \"", ',')
-        # new_string = new_string.replace(',\n   }', '"\n   }')
         return new_string
 
     converted_string = convert_string(text_data)
