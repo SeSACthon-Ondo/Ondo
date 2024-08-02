@@ -1,7 +1,7 @@
 /* BottomModal.module.css */
 .modal_container {
   width: 100%;
-  height: 86%;
+  height: 90%;
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
   background-color: #FFFFFF;
@@ -198,7 +198,7 @@
 ul{
   margin: 0;
   padding: 0;
-  max-height: 145px;
+  max-height: 117px;
   overflow-y: hidden;
 }
 li {

@@ -70,7 +70,7 @@ export default function Map() {
   const debouncedLat = useDebounce(lat, 500);
   const debouncedLon = useDebounce(lon, 500);
   const [initialized, setInitialized] = useState(false); // 초기화 상태 추가
-  const [comment, setComment] = useState(['저한테는 양이 많아요', '그냥저냥이었어요', '진짜 맛있음!!']);
+  const [comment, setComment] = useState('');
 
   
   //검색

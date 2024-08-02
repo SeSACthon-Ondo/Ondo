@@ -1,7 +1,6 @@
-import { useState } from 'react';
-
+import { useEffect, useState } from 'react';
 import style from './BottomModal.module.css';
-import back from '../../assets/back_black.png'
+import back from '../../assets/back_black.png';
 import korea from '../../assets/한식.png';
 import china from '../../assets/중식.png';
 import japan from '../../assets/일식.png';
@@ -11,9 +10,15 @@ import heart from '../../assets/heart.png';
 
 const SearchList = (props) => {
   const [newComment, setNewComment] = useState('');
+  const [isClicked, setIsClicked] = useState(false);
+
+  useEffect(() => {
+    setNewComment('');
+  }, [props.review]);
+
   let imgSrc = null;
 
-  switch(props.category) {
+  switch (props.category) {
     case '한식':
       imgSrc = korea;
       break;
@@ -38,47 +43,49 @@ const SearchList = (props) => {
   };
 
   const handleAddComment = () => {
-    if (newComment.trim()) {
-        props.setComment([...props.comment, newComment]);
-        setNewComment('');
-    }
+    props.setComment(newComment);
+    setNewComment('')
+    setIsClicked(true)
   };
 
   return (
-      <div className={style.result_container}>
-        <div className={style.controller}>
-            <img className={style.back} src={back} alt='back' onClick={props.refresh}/>
-            <img className={style.food} src={imgSrc} alt='food'/>
-            <div className={style.name}>
-                <h2>{props.name}</h2>
-                <p># {props.category}</p>
-            </div>
+    <div className={style.result_container}>
+      <div className={style.controller}>
+        <img className={style.back} src={back} alt='back' onClick={props.refresh} />
+        <img className={style.food} src={imgSrc} alt='food' />
+        <div className={style.name}>
+          <h2>{props.name}</h2>
+          <p># {props.category}</p>
         </div>
-        <div className={style.hr}></div>
-        <h3>주소</h3>
-        <p className={style.address}>{props.address}</p>
-        
-        {props.type === '꿈나무' ? <><h3>메뉴</h3>
-        <ul>
-          {Object.keys(props.menu).map(key => (
-            <li key={key}>{props.menu[key]}</li>
-          ))}
-        </ul>
-        </> : <></>}
-
-        <h3>리뷰</h3>
-        <div className={style.comment_wrapper}>
-        {props.review.map((text, index) => (
-                <p key={index} className={style.comment_text}>{text}</p>
-            ))}
-          </div>
-        <div className={style.comment_box}>
-          <input type='text' value={newComment} onChange={handleInputChange}/> 
-          <button onClick={handleAddComment}>등록</button>
-        </div>
-        
       </div>
+      <div className={style.hr}></div>
+      <h3>주소</h3>
+      <p className={style.address}>{props.address}</p>
+
+      {props.type === '꿈나무' ? (
+        <>
+          <h3>메뉴</h3>
+          <ul>
+            {Object.keys(props.menu).map(key => (
+              <li key={key}>{props.menu[key]}</li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+
+      <h3>리뷰</h3>
+      <div className={style.comment_wrapper}>
+        {props.review.map((text, index) => (
+          <p key={index} className={style.comment_text}>{text}</p>
+        ))}
+        {isClicked ? <p>{props.comment}</p> : <></>}
+      </div>
+      <div className={style.comment_box}>
+        <input type='text' value={newComment} onChange={handleInputChange} />
+        <button onClick={handleAddComment}>등록</button>
+      </div>
+    </div>
   );
-}
+};
 
 export default SearchList;
