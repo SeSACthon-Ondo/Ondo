@@ -1,10 +1,4 @@
-function customSplit(text) {
-    // 정규 표현식 패턴: 숫자와 숫자 사이에 있는 ,를 찾습니다.
-    const pattern = /(?<=\d),(?=\d)/g;
-    // 패턴에 맞는 ,를 기준으로 분리합니다.
-    return text.split(pattern);
-}
-
+// 꿈나무 카드 데이터 정리(주변 가게)
 const transformGptData = (data) => {
     return data.map((item) => {
         const menuArray = item.menu.split(', ');
@@ -18,33 +12,44 @@ const transformGptData = (data) => {
             address: item.address.trim(),
             category: item.category.trim(),
             menu: menuObject,
+            review: item.review ? item.review.split(',').map(review => review.trim()) : [] // review 필드를 배열로 변환
         };
     });
 };
 
+// 문화누리 카드 데이터 정리(주변 가게)
 const transformNooriData = (data) => {
     console.log(data);
     return data.map((item) => {
         console.log(`Transforming item:`, item); // 데이터 변환 전 출력
 
-        // menu 필드가 없는 데이터 처리
+        // menu 필드가 없는 데이터 처리 및 review 필드 추가
         return {
             name: item.name ? item.name.trim() : null,
             address: item.address ? item.address.trim() : null,
             category: item.category ? item.category.trim() : null,
-            menu: {} // menu 필드가 없으므로 빈 객체로 설정
+            menu: {}, // menu 필드가 없으므로 빈 객체로 설정
+            review: item.review ? item.review.split(',').map(review => review.trim()) : [] // review 필드를 배열로 변환
         };
     });
 };
 
 
-const transformFavoriteData = (data) => {
-    return data[0].recommend.split(',').map((item) => item.trim());
+// AI키워드 데이터 정리- 문화누리
+const transformFavoriteFoodData = (data) => {
+    console.log(data)
+    return data[0].recommend.split(', ').map((item) => item.trim());
+};
+// AI키워드 데이터 정리- 문화누리
+const transformFavoriteCultureData = (data) => {
+    console.log(data)
+    return data.recommend.split(', ').map((item) => item.trim());
 };
 
-const transformReviewData = (data) => {
-    return data[0].recommend.split(',').map((item) => item.trim());
-};
+// 리뷰 데이터 정리
+// const transformReviewData = (data) => {
+//     return data[0].recommend.split(',').map((item) => item.trim());
+// };
 
 
 
@@ -86,7 +91,7 @@ export const nearFoodHandler = async (address, lat, lon, setDummyData, setDummyA
         setDummyData(transformedGptData);
 
         // favorite_data 변환
-        const transformedFavoriteData = transformFavoriteData(data.favorite_data);
+        const transformedFavoriteData = transformFavoriteFoodData(data.favorite_data);
         setDummyAI(transformedFavoriteData);
 
         
@@ -176,12 +181,12 @@ export const nearCultureHandler = async (address, lat, lon, setDummyData, setDum
         console.log(data);
 
         // gpt_data 변환
-        const transformedGptData = transformNooriData(data);
+        const transformedGptData = transformNooriData(data.serialized_stores);
         setDummyData(transformedGptData);
 
         // favorite_data 변환
-        // const transformedFavoriteData = transformFavoriteData(data.favorite_data);
-        // setDummyAI(transformedFavoriteData);
+        const transformedFavoriteData = transformFavoriteCultureData(data.recommend_keywords);
+        setDummyAI(transformedFavoriteData);
 
         setRefresh(refresh * -1);
     } catch (error) {

@@ -5,7 +5,7 @@ import myMarker from '../../assets/my.png';
 import style from './Map.module.css';
 
 // 지도 초기화 함수
-export const initializeMap = (containerId, lat, lon, setMap, setGeocoder,  setAddress, setLat, setLon) => {
+export const initializeMap = (containerId, lat, lon, setMap, setGeocoder, setAddress, setLat, setLon) => {
   const container = document.getElementById(containerId); // 지도를 표시할 HTML 요소를 가져옵니다.
   const options = {
     // 위치임의 설정
@@ -60,13 +60,14 @@ export const displayCenterInfo = (geocoder, coords, setAddress, setLat, setLon) 
 };
   
 // 주소를 좌표로 변환하고 마커를 생성 및 설정하는 함수
-export const setMarkerHandler = (geocoder, address, map, name, category, handleListItemClick, markers) => {
+export const setMarkerHandler = (geocoder, address, map, name, category, review, handleListItemClick, markers) => {
   return new Promise((resolve, reject) => {
+    console.log(review);
     // 사용자의 현재 위치를 가져옵니다.
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(function(position) {
         const userCoords = new kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
-        
+
         geocoder.addressSearch(address, function(result, status) {
           if (status === kakao.maps.services.Status.OK) {
             const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
@@ -86,7 +87,7 @@ export const setMarkerHandler = (geocoder, address, map, name, category, handleL
               image: markerImage // 마커이미지 설정
             });
 
-            //사용자 위치에 마커를 추가
+            // 사용자 위치에 마커를 추가
             const userRealMarker = new kakao.maps.Marker({
               position: userCoords,
               map: map,
@@ -102,7 +103,7 @@ export const setMarkerHandler = (geocoder, address, map, name, category, handleL
             // 커스텀 오버레이로 사용할 HTML 생성
             const overlayContent = document.createElement('div');
             overlayContent.className = style.infoBox;
-            overlayContent.innerHTML = `<h3>${name}</h3><p># ${category}<p>`;
+            overlayContent.innerHTML = `<h3>${name}</h3><p># ${category}</p>`;
 
             // 커스텀 오버레이 생성
             const customOverlay = new kakao.maps.CustomOverlay({
@@ -126,6 +127,11 @@ export const setMarkerHandler = (geocoder, address, map, name, category, handleL
             // 지도의 중심을 사용자의 현재 위치로 이동시킵니다
             //map.setCenter(userCoords);
 
+            // 마커에 추가 데이터 저장
+            marker.name = name;
+            marker.category = category;
+            marker.review = review;
+
             resolve(marker);
           } else {
             reject(new Error('Failed to search address'));
@@ -139,6 +145,7 @@ export const setMarkerHandler = (geocoder, address, map, name, category, handleL
     }
   });
 };
+
 
 // 좌표를 주소로 변환하고 해당 위치에 마커를 표시하는 함수
 // const searchDetailAddrFromCoords = (geocoder, coords) => {
