@@ -1,48 +1,35 @@
 # 따뜻함을 나눠주는 지도, 온도
-꿈나무 카드, 문화 누리 카드를 사용할 수 있는 선한 영향력을 가진 가게를 현재 위치 기반으로 추천해주는 서비스
-![1](https://github.com/user-attachments/assets/e5f9f22d-05da-477a-969b-eb3f3a4962e4)
+![1](https://github.com/user-attachments/assets/fed4f3ac-0bfe-407e-a51e-d5716b9b3a9a)
+: 서울시의 아동급식카드인 꿈나무 카드, 문화 누리 카드를 사용할 수 있는 가맹점을 개인 맞춤형으로 추천해주는 서비스
 
 
 ## 구성원 및 역할
-- 장유진(팀장): Frontend 개발, 디자인
-- 권용현: 프롬프트 엔지니어링, AI 활용 개발
-- 이준호: Backend 개발
-- 유태람: Backend 개발, DBA
+<table>
+  <tbody>
+    <tr>
+      <td align="center"><a href="https://github.com/Youjiiin"><img src="https://github.com/user-attachments/assets/c84c784e-ee68-4dbe-bdbb-60474d3bc9a9" width="100px;" alt=""/><br /><sub><b>팀장, FE, 디자인, 기획 : 장유진</b></sub></a><br /></td>
+      <td align="center"><a href="https://github.com/Lanvizu"><img src="https://github.com/user-attachments/assets/3b5f136b-79ae-4c27-9c0b-d4839d044d9f" width="100px;" alt=""/><br /><sub><b>BE, 서버관리 : 이준호 </b></sub></a><br /></td>
+      <td align="center"><a href="https://github.com/ttaeram"><img src="https://github.com/user-attachments/assets/6a48a50e-773a-4347-88df-ebf617fee5b9" width="100px;" alt=""/><br /><sub><b>BE, 데이터 관리: 유태람</b></sub></a><br /></td>
+      <td align="center"><a href="https://github.com/UserNameGGarri"><img src="https://github.com/user-attachments/assets/12076cb8-b942-4264-a8ad-ba7d94695dc0" width="100px;" alt=""/><br /><sub><b>AI, 프롬프트 엔지니어링 : 권용현</b></sub></a><br /></td>
+    </tr>
+  </tbody>
+</table>
 
-## 개발 동기
-### 가맹점 정보 미흡
-- 아동 급식 카드(꿈나무 카드), 문화 누리 카드 가맹점이 급격히 증가
-- 전화번호 등 정확하지 않은 정보가 게시 되어 있어 이용자들의 불편함 야기
-- 정확한 정보를 제공함으로써 복지 카드 이용에 편리함 제공
+## 서비스 소개
+![6](https://github.com/user-attachments/assets/e646428b-38f5-400f-ba01-84daec5b1bcd)
+![7](https://github.com/user-attachments/assets/3e7fe160-0eba-41f9-b354-18b96561168f)
+![8](https://github.com/user-attachments/assets/51f4c7b0-2955-4603-b3da-353e31d09ccf)
 
-### 가맹점 접근성 향상
-- 2022년 기준, 가맹점이 52만 4143 점포가 존재
-- 하지만 원하는 조건의 점포의 정보를 수집하는데 어려움 존재
-- 따라서 접근이 쉬운 편의점 이용률이 증가(41.9%)
-- 정보를 탐색하는 과정이 편리하다면, 다양한 가맹점 접근이 활발해질 것으로 기대
+## 활용 기술 및 데이터
+![9](https://github.com/user-attachments/assets/876deb05-f3c8-461c-9359-0609959165c7)
+![10](https://github.com/user-attachments/assets/d410d10b-f95e-4e99-8aa1-9c15171c4cbd)
 
-## 주요 활용 데이터
-- 결식우려아동에게 발급된 아동급식카드를 사용할 수 있는 편의점이나 음식점 등의 가맹점 정보
-    - [전국아동복지급식정보표준데이터](https://www.data.go.kr/data/15034530/standard.do)
-    - 공공 데이터 포털에서 제공받은 데이터를 바탕으로 네이버 지도 크롤링
-    - 해당 가맹점의 메뉴, 음식 카테고리 정보 수집
-- 문화누리카드에서 제공하는 오프라인 가맹점 목록
-    - [한국문화예술위원회_문화누리카드 오프라인 가맹점 목록](https://www.data.go.kr/data/15045194/fileData.do)
-- 문화누리카드에서 제공하는 온라인 가맹점 목록
-    - [한국문화예술위원회_문화누리카드 온라인 가맹점 목록](https://www.data.go.kr/data/15045193/fileData.do)
+### ✔️ Front End
+<img src="https://img.shields.io/badge/javascript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"> , <img src="https://img.shields.io/badge/react-61DAFB?style=for-the-badge&logo=react&logoColor=black">
+### ✔️ Back End
+<img src="https://img.shields.io/badge/python-3776AB?style=for-the-badge&logo=python&logoColor=white">, <img src="https://img.shields.io/badge/django-092E20?style=for-the-badge&logo=django&logoColor=white">, ![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
 
-## 서비스 활용 방안
-![4](https://github.com/user-attachments/assets/ec943841-fe90-4530-94e6-3524dde8d2d9)
-### 1. 사용 카드 선택
-- 꿈나무 카드 / 문화 누리 카드 중 사용을 원하는 카드 선택
-
-### 2. 주변 가맹점 추천
-- 이용자의 현재 위치를 기준으로, 해당 카드를 사용할 수 있는 주변의 가맹점 추천
-
-### 3. 원하는 조건 검색
-- 이용자가 원하는 조건을 검색하면, 조건에 맞는 가맹점 리스트 제공
-
-### 4. AI 추천 검색
-- 이용자가 지금까지 검색했던 조건들을 취합하여 맞춤 키워드 제공
-    - 꿈나무 카드 이용 시, 선호 메뉴 및 부족한 영양소에 맞춰 키워드 제공, 아동에게 해로운 가맹점 필터링
-    - 문화 누리 카드 이용 시, 선호 문화 생활에 맞춰 키워드 제공
+### ✔️ AI
+![ChatGPT](https://img.shields.io/badge/chatGPT-74aa9c?style=for-the-badge&logo=openai&logoColor=white) API, LangChain
+### ✔️ Tools
+<img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white">,![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white), ![Figma](https://img.shields.io/badge/figma-%23F24E1E.svg?style=for-the-badge&logo=figma&logoColor=white)
