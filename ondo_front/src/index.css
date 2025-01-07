@@ -1,12 +1,7 @@
 body {
-    margin: 0;
-    font-family: 'pretendard';
+  margin: 0;
+  font-family: 'Pretendard', sans-serif;
 }
 #root{
-  overflow: hidden;
-}
-
-@font-face {
-  font-family: 'pretendard';
-  src: url(./assets/font/Pretendard-Regular.otf);
+overflow: hidden;
 }
